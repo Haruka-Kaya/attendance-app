@@ -1,0 +1,173 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/event.dart';
+import '../providers/attendance_provider.dart';
+import '../widgets/status_chip.dart';
+
+class EventDetailScreen extends StatefulWidget {
+  final EventModel event;
+  const EventDetailScreen({super.key, required this.event});
+
+  @override
+  State<EventDetailScreen> createState() => _EventDetailScreenState();
+}
+
+class _EventDetailScreenState extends State<EventDetailScreen> {
+  late String _status;
+  final _commentCtl      = TextEditingController();
+  final _partialStartCtl = TextEditingController();
+  final _partialEndCtl   = TextEditingController();
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _status = widget.event.myStatus;
+    _commentCtl.text      = widget.event.myComment ?? '';
+    _partialStartCtl.text = widget.event.myPartialStart ?? '';
+    _partialEndCtl.text   = widget.event.myPartialEnd ?? '';
+  }
+
+  @override
+  void dispose() {
+    _commentCtl.dispose();
+    _partialStartCtl.dispose();
+    _partialEndCtl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    final err = await context.read<AttendanceProvider>().update(
+      eventId:      widget.event.id,
+      status:       _status,
+      comment:      _commentCtl.text.isEmpty ? null : _commentCtl.text,
+      partialStart: _status == 'partial' && _partialStartCtl.text.isNotEmpty
+          ? _partialStartCtl.text
+          : null,
+      partialEnd:   _status == 'partial' && _partialEndCtl.text.isNotEmpty
+          ? _partialEndCtl.text
+          : null,
+    );
+    setState(() => _saving = false);
+    if (!mounted) return;
+    if (err != null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(err), backgroundColor: Colors.red));
+    } else {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('保存しました')));
+      Navigator.pop(context);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ev = widget.event;
+    return Scaffold(
+      appBar: AppBar(title: Text(ev.title)),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // event info card
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(ev.title,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    const Icon(Icons.calendar_today, size: 14),
+                    const SizedBox(width: 4),
+                    Text(ev.date.toString().substring(0, 10)),
+                  ]),
+                  const SizedBox(height: 4),
+                  Row(children: [
+                    const Icon(Icons.access_time, size: 14),
+                    const SizedBox(width: 4),
+                    Text('${ev.startTime} – ${ev.endTime}'),
+                  ]),
+                  if (ev.description.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(ev.description,
+                        style: TextStyle(color: Colors.grey.shade700)),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // attendance form
+          Text('出欠登録',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleSmall
+                  ?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          StatusSelector(
+              selected: _status,
+              onChanged: (s) => setState(() => _status = s)),
+          const SizedBox(height: 12),
+
+          if (_status == 'partial') ...[
+            Row(children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _partialStartCtl,
+                  decoration: const InputDecoration(
+                    labelText: '開始時刻',
+                    hintText: '例: 15:00',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextFormField(
+                  controller: _partialEndCtl,
+                  decoration: const InputDecoration(
+                    labelText: '終了時刻',
+                    hintText: '例: 17:00',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 12),
+          ],
+
+          TextFormField(
+            controller: _commentCtl,
+            decoration: const InputDecoration(
+              labelText: 'コメント (任意)',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+            maxLines: 2,
+          ),
+          const SizedBox(height: 16),
+
+          SizedBox(
+            height: 48,
+            child: FilledButton(
+              onPressed: _saving ? null : _save,
+              child: _saving
+                  ? const SizedBox(
+                      width: 20, height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : const Text('保存'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
