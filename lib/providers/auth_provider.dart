@@ -45,7 +45,19 @@ class AuthProvider extends ChangeNotifier {
       _loading = false; notifyListeners();
       return null;
     } on DioException catch (e) {
-      _error = (e.response?.data as Map?)?['error']?.toString() ?? 'ログインに失敗しました';
+      // 詳細なエラーメッセージを生成 (デバッグ用)
+      final serverErr = (e.response?.data as Map?)?['error']?.toString();
+      if (serverErr != null) {
+        _error = serverErr;
+      } else if (e.response != null) {
+        _error = 'HTTP ${e.response!.statusCode}: ${e.response?.data}';
+      } else {
+        _error = '${e.type.name}: ${e.message ?? e.error?.toString() ?? '接続失敗'}';
+      }
+      _loading = false; notifyListeners();
+      return _error;
+    } catch (e) {
+      _error = 'エラー: ${e.runtimeType} - $e';
       _loading = false; notifyListeners();
       return _error;
     }
