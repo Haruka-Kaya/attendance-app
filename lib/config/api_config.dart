@@ -4,15 +4,15 @@
 // ================================================================
 
 class ApiConfig {
-  // ── ローカル開発 ──────────────────────────────────────────────
+  // ── 本番 (Coolify on Vultr) ──────────────────────────────────
+  static const String kBaseUrl = 'http://mtsxkz3e7kjdnh1kp6t3l5la.202.182.114.246.sslip.io';
+
+  // ── ローカル開発に戻すとき ────────────────────────────────────
   // Android エミュレータ → 10.0.2.2 がホストの localhost に対応
-  static const String kBaseUrl = 'http://10.0.2.2:5000';
-
-  // 実機 (USB/WiFi) の場合 → start_dev.ps1 に表示される IP を使用
+  // static const String kBaseUrl = 'http://10.0.2.2:5000';
+  //
+  // 実機 (USB/WiFi) の場合 → PC の LAN IP を使用
   // static const String kBaseUrl = 'http://192.168.x.x:5000';
-
-  // 本番 (ConoHa VPS)
-  // static const String kBaseUrl = 'https://your-domain.com';
 
   // ── エンドポイント ─────────────────────────────────────────────
   static String get baseUrl => kBaseUrl;

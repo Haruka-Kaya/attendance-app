@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Allow cleartext HTTP to the Android emulator host (maps to localhost) -->
+    <!-- 本番VPS (Vultr) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">202.182.114.246.sslip.io</domain>
+        <domain includeSubdomains="false">202.182.114.246</domain>
+    </domain-config>
+    <!-- ローカル開発: Androidエミュレータ -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="false">10.0.2.2</domain>
     </domain-config>
-    <!-- Allow cleartext HTTP for local LAN development (physical device) -->
+    <!-- ローカル開発: 実機 (LAN) -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="false">192.168.0.0</domain>
     </domain-config>
