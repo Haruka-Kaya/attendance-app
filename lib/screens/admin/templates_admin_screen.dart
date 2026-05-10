@@ -48,7 +48,7 @@ class _TemplatesAdminScreenState extends State<TemplatesAdminScreen>
         children: [
           FloatingActionButton.small(
             heroTag: 'generate',
-            tooltip: 'イベント生成',
+            tooltip: '活動生成',
             onPressed: () => _showGenerateDialog(context),
             child: const Icon(Icons.auto_awesome),
           ),
@@ -197,7 +197,7 @@ class _GenerateDialogState extends State<_GenerateDialog> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$count 件のイベントを生成しました')));
+            SnackBar(content: Text('$count 件の活動を生成しました')));
       }
     } catch (e) {
       if (mounted) {
@@ -212,7 +212,7 @@ class _GenerateDialogState extends State<_GenerateDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('イベント一括生成'),
+      title: const Text('活動一括生成'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -383,7 +383,7 @@ class _TemplateFormState extends State<_TemplateForm> {
               value: _isAuto,
               onChanged: (v) => setState(() => _isAuto = v),
               title: const Text('自動生成ON', style: TextStyle(fontSize: 13)),
-              subtitle: const Text('ダッシュボード表示時に自動でイベントを作成',
+              subtitle: const Text('ダッシュボード表示時に自動で活動を作成',
                   style: TextStyle(fontSize: 11)),
               contentPadding: EdgeInsets.zero,
             ),

@@ -153,7 +153,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             ],
 
             // upcoming events
-            Text('直近のイベント',
+            Text('直近の活動',
                 style: theme.textTheme.titleSmall
                     ?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
@@ -165,7 +165,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             else if (eventProv.upcoming.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(24),
-                child: Center(child: Text('予定されているイベントはありません')),
+                child: Center(child: Text('予定されている活動はありません')),
               )
             else
               ...eventProv.upcoming.map((e) => EventCard(

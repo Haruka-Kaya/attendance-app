@@ -152,7 +152,7 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : events.isEmpty
-                    ? const Center(child: Text('この日のイベントはありません'))
+                    ? const Center(child: Text('この日の活動はありません'))
                     : users.isEmpty
                         ? const Center(child: Text('ユーザーがいません'))
                         : _buildTable(users, events),

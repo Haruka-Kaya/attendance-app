@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
+import '../providers/language_provider.dart';
 import 'change_password_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -11,10 +12,11 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth  = context.watch<AuthProvider>();
     final theme = context.watch<ThemeProvider>();
+    final lang  = context.watch<LanguageProvider>();
     final user  = auth.user;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('プロフィール')),
+      appBar: AppBar(title: Text(lang.t('nav.profile'))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -49,19 +51,34 @@ class ProfileScreen extends StatelessWidget {
           // 設定
           Card(
             child: Column(children: [
+              // 言語
+              ListTile(
+                leading: const Icon(Icons.language),
+                title: Text(lang.t('prof.language')),
+                trailing: DropdownButton<String>(
+                  value: lang.lang,
+                  underline: const SizedBox(),
+                  items: [
+                    DropdownMenuItem(value: 'ja', child: Text(lang.t('prof.language_ja'))),
+                    DropdownMenuItem(value: 'en', child: Text(lang.t('prof.language_en'))),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) lang.setLang(v);
+                  },
+                ),
+              ),
+              const Divider(height: 1),
+              // テーマ
               ListTile(
                 leading: const Icon(Icons.dark_mode_outlined),
-                title: const Text('テーマ'),
+                title: Text(lang.t('prof.theme')),
                 trailing: DropdownButton<ThemeMode>(
                   value: theme.mode,
                   underline: const SizedBox(),
-                  items: const [
-                    DropdownMenuItem(
-                        value: ThemeMode.system, child: Text('システム')),
-                    DropdownMenuItem(
-                        value: ThemeMode.light,  child: Text('ライト')),
-                    DropdownMenuItem(
-                        value: ThemeMode.dark,   child: Text('ダーク')),
+                  items: [
+                    DropdownMenuItem(value: ThemeMode.system, child: Text(lang.t('prof.theme_system'))),
+                    DropdownMenuItem(value: ThemeMode.light,  child: Text(lang.t('prof.theme_light'))),
+                    DropdownMenuItem(value: ThemeMode.dark,   child: Text(lang.t('prof.theme_dark'))),
                   ],
                   onChanged: (m) {
                     if (m != null) theme.setMode(m);
@@ -69,9 +86,10 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
               const Divider(height: 1),
+              // パスワード変更
               ListTile(
                 leading: const Icon(Icons.lock_outline),
-                title: const Text('パスワード変更'),
+                title: Text(lang.t('auth.password_change')),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => Navigator.push(
                   context,
@@ -90,20 +108,20 @@ class ProfileScreen extends StatelessWidget {
               side: const BorderSide(color: Colors.red),
             ),
             icon: const Icon(Icons.logout),
-            label: const Text('ログアウト'),
+            label: Text(lang.t('auth.logout')),
             onPressed: () async {
               final ok = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  title: const Text('ログアウト'),
-                  content: const Text('ログアウトしますか？'),
+                  title: Text(lang.t('auth.logout')),
+                  content: Text(lang.t('auth.logout_confirm')),
                   actions: [
                     TextButton(
                         onPressed: () => Navigator.pop(ctx, false),
-                        child: const Text('キャンセル')),
+                        child: Text(lang.t('common.cancel'))),
                     TextButton(
                         onPressed: () => Navigator.pop(ctx, true),
-                        child: const Text('ログアウト')),
+                        child: Text(lang.t('auth.logout'))),
                   ],
                 ),
               );

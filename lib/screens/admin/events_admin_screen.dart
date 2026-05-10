@@ -37,7 +37,7 @@ class _EventsAdminScreenState extends State<EventsAdminScreen>
           : RefreshIndicator(
               onRefresh: () => prov.loadAll(),
               child: prov.all.isEmpty
-                  ? const Center(child: Text('イベントがありません'))
+                  ? const Center(child: Text('活動がありません'))
                   : ListView.builder(
                       padding: const EdgeInsets.only(bottom: 80),
                       itemCount: prov.all.length,
@@ -196,7 +196,7 @@ class _EventFormState extends State<_EventForm> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(widget.event == null ? 'イベント追加' : 'イベント編集',
+            Text(widget.event == null ? '活動追加' : '活動編集',
                 style: const TextStyle(
                     fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 12),

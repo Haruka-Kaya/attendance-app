@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:ota_update/ota_update.dart';
 import '../services/update_service.dart';
 
 class UpdateScreen extends StatefulWidget {
@@ -19,30 +18,24 @@ class _UpdateScreenState extends State<UpdateScreen> {
 
   void _startUpdate() {
     setState(() { _running = true; _failed = false; _status = 'ダウンロード中...'; });
-    UpdateService.startInstall(widget.info.downloadUrl).listen((event) {
+    UpdateService.downloadAndInstall(widget.info.downloadUrl).listen((event) {
       if (!mounted) return;
-      switch (event.status) {
-        case OtaStatus.DOWNLOADING:
-          setState(() {
-            _progress = double.tryParse(event.value ?? '0') ?? 0;
-            _status   = 'ダウンロード中... ${_progress.toStringAsFixed(0)}%';
-          });
-        case OtaStatus.INSTALLING:
-          setState(() => _status = 'インストール画面を開いています...');
-        case OtaStatus.ALREADY_RUNNING_ERROR:
-          setState(() { _status = '既に更新中です'; _failed = true; });
-        case OtaStatus.PERMISSION_NOT_GRANTED_ERROR:
-          setState(() {
-            _status = 'インストール権限が必要です。設定で「不明なアプリのインストール」を許可してください。';
-            _failed = true;
-          });
-        case OtaStatus.INTERNAL_ERROR:
-        case OtaStatus.DOWNLOAD_ERROR:
-        case OtaStatus.CHECKSUM_ERROR:
-          setState(() { _status = 'エラー: ${event.value ?? event.status.name}'; _failed = true; });
+      if (event.error != null) {
+        setState(() { _status = 'エラー: ${event.error}'; _failed = true; });
+        return;
       }
+      setState(() {
+        _progress = event.percent;
+        if (event.percent >= 99.9 && !event.done) {
+          _status = 'インストーラを開いています...';
+        } else if (event.done) {
+          _status = 'インストーラが起動しました';
+        } else {
+          _status = 'ダウンロード中... ${event.percent.toStringAsFixed(0)}%';
+        }
+      });
     }, onError: (e) {
-      setState(() { _status = 'エラー: $e'; _failed = true; });
+      if (mounted) setState(() { _status = 'エラー: $e'; _failed = true; });
     });
   }
 

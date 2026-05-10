@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/language_provider.dart';
 import 'dashboard_screen.dart';
 import 'calendar_screen.dart';
 import 'my_attendance_screen.dart';
@@ -24,44 +25,45 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final user      = context.watch<AuthProvider>().user;
+    final lang      = context.watch<LanguageProvider>();
     final isAdmin   = user?.isAdmin   ?? false;
     final isManager = user?.isManager ?? false;
 
     final destinations = <(NavigationDestination, Widget)>[
       (
-        const NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'ホーム'),
+        NavigationDestination(
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
+            label: lang.t('nav.home')),
         const DashboardScreen(),
       ),
       (
-        const NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month),
-            label: 'カレンダー'),
+        NavigationDestination(
+            icon: const Icon(Icons.calendar_month_outlined),
+            selectedIcon: const Icon(Icons.calendar_month),
+            label: lang.t('nav.calendar')),
         const CalendarScreen(),
       ),
       (
-        const NavigationDestination(
-            icon: Icon(Icons.assignment_outlined),
-            selectedIcon: Icon(Icons.assignment),
-            label: '出欠記録'),
+        NavigationDestination(
+            icon: const Icon(Icons.assignment_outlined),
+            selectedIcon: const Icon(Icons.assignment),
+            label: lang.t('nav.my_attendance')),
         const MyAttendanceScreen(),
       ),
       if (isAdmin || isManager)
         (
-          const NavigationDestination(
-              icon: Icon(Icons.admin_panel_settings_outlined),
-              selectedIcon: Icon(Icons.admin_panel_settings),
-              label: '管理'),
+          NavigationDestination(
+              icon: const Icon(Icons.admin_panel_settings_outlined),
+              selectedIcon: const Icon(Icons.admin_panel_settings),
+              label: lang.t('nav.admin')),
           _AdminShell(isAdmin: isAdmin),
         ),
       (
-        const NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'プロフィール'),
+        NavigationDestination(
+            icon: const Icon(Icons.person_outline),
+            selectedIcon: const Icon(Icons.person),
+            label: lang.t('nav.profile')),
         const ProfileScreen(),
       ),
     ];
@@ -99,7 +101,7 @@ class _AdminShellState extends State<_AdminShell> {
   @override
   Widget build(BuildContext context) {
     final tabs = <(String, Widget)>[
-      ('イベント',       const EventsAdminScreen()),
+      ('活動',       const EventsAdminScreen()),
       ('出欠管理',       const AttendanceAdminScreen()),
       ('統計',           const StatsAdminScreen()),
       ('テンプレート',   const TemplatesAdminScreen()),

@@ -7,7 +7,8 @@ plugins {
 
 android {
     namespace = "com.example.attendance_app"
-    compileSdk = flutter.compileSdkVersion
+    // ota_update が androidx の lStar 等を要求するため SDK 34 を強制
+    compileSdk = 34
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

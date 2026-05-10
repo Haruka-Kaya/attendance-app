@@ -87,7 +87,7 @@ class _CalendarScreenState extends State<CalendarScreen>
             child: eventProv.loading
                 ? const Center(child: CircularProgressIndicator())
                 : dayEvents.isEmpty
-                    ? const Center(child: Text('この日のイベントはありません'))
+                    ? const Center(child: Text('この日の活動はありません'))
                     : ListView.builder(
                         padding: const EdgeInsets.only(top: 4, bottom: 12),
                         itemCount: dayEvents.length,

@@ -69,7 +69,7 @@ class _StatsAdminScreenState extends State<StatsAdminScreen>
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              _HeaderStat('総イベント', '$total'),
+                              _HeaderStat('総活動', '$total'),
                               _HeaderStat('参加者数', '${users.length}'),
                               _HeaderStat(
                                 '平均出席率',
