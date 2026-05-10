@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../models/user.dart';
 import '../services/api_service.dart';
+import 'debug_provider.dart';
 
 class AuthProvider extends ChangeNotifier {
   UserModel? _user;
@@ -45,19 +46,26 @@ class AuthProvider extends ChangeNotifier {
       _loading = false; notifyListeners();
       return null;
     } on DioException catch (e) {
-      // 詳細なエラーメッセージを生成 (デバッグ用)
       final serverErr = (e.response?.data as Map?)?['error']?.toString();
-      if (serverErr != null) {
-        _error = serverErr;
-      } else if (e.response != null) {
-        _error = 'HTTP ${e.response!.statusCode}: ${e.response?.data}';
+      if (DebugProvider.verbose) {
+        // 詳細表示モード
+        if (serverErr != null) {
+          _error = 'HTTP ${e.response?.statusCode}: $serverErr';
+        } else if (e.response != null) {
+          _error = 'HTTP ${e.response!.statusCode}: ${e.response?.data}';
+        } else {
+          _error = '${e.type.name}: ${e.message ?? e.error?.toString() ?? '接続失敗'}';
+        }
       } else {
-        _error = '${e.type.name}: ${e.message ?? e.error?.toString() ?? '接続失敗'}';
+        // 通常表示
+        _error = serverErr ?? 'ログインに失敗しました';
       }
       _loading = false; notifyListeners();
       return _error;
     } catch (e) {
-      _error = 'エラー: ${e.runtimeType} - $e';
+      _error = DebugProvider.verbose
+          ? 'エラー: ${e.runtimeType} - $e'
+          : 'ログインに失敗しました';
       _loading = false; notifyListeners();
       return _error;
     }
@@ -70,6 +78,16 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners(); return null;
     } on DioException catch (e) {
       return (e.response?.data as Map?)?['error']?.toString() ?? 'パスワード変更に失敗しました';
+    }
+  }
+
+  /// サーバから最新のユーザー情報を取得して反映
+  Future<void> refreshUser() async {
+    try {
+      _user = await ApiService.getMe();
+      notifyListeners();
+    } catch (_) {
+      // 失敗しても致命的ではない
     }
   }
 

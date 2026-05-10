@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import '../config/api_config.dart';
+import '../providers/debug_provider.dart';
 
 class UpdateInfo {
   final String currentVersion;
@@ -11,7 +13,7 @@ class UpdateInfo {
   final String minSupportedVersion;
   final String downloadUrl;
   final String releaseNotes;
-  final bool isForced; // current < min_supported なら強制
+  final bool isForced;
   const UpdateInfo({
     required this.currentVersion,
     required this.latestVersion,
@@ -30,8 +32,6 @@ class UpdateProgress {
 }
 
 class UpdateService {
-  /// 起動時にバージョンチェック。アップデートが必要なら UpdateInfo を返す。
-  /// 通信エラー等は null（アプリ起動を妨げない）。
   static Future<UpdateInfo?> check() async {
     try {
       final dio = Dio(BaseOptions(
@@ -64,50 +64,81 @@ class UpdateService {
     }
   }
 
-  /// APKをダウンロードしてOSのインストーラを起動する。
-  /// 進捗を Stream で返す。
-  static Stream<UpdateProgress> downloadAndInstall(String url) async* {
-    try {
-      final dir = await getExternalStorageDirectory()
-          ?? await getApplicationDocumentsDirectory();
-      final apkFile = File('${dir.path}/attendance-update.apk');
+  /// APKをダウンロード後にOSインストーラを起動。
+  static Stream<UpdateProgress> downloadAndInstall(String url) {
+    final controller = StreamController<UpdateProgress>();
 
-      // 既存ファイルがあれば削除
-      if (await apkFile.exists()) await apkFile.delete();
+    () async {
+      File? apkFile;
+      try {
+        // 保存先 (アプリ専用 external storage / FileProvider 経由でアクセス可能)
+        final dir = await getExternalStorageDirectory()
+            ?? await getApplicationDocumentsDirectory();
+        apkFile = File('${dir.path}/attendance-update.apk');
+        if (await apkFile.exists()) await apkFile.delete();
 
-      final dio = Dio();
-      final controller = _ProgressController();
+        controller.add(const UpdateProgress(percent: 0));
 
-      // ダウンロード(進捗を流すため別Streamに渡す)
-      final downloadFuture = dio.download(
-        url,
-        apkFile.path,
-        onReceiveProgress: (received, total) {
-          if (total > 0) {
-            controller.update(received / total * 100);
-          }
-        },
-      );
+        final dio = Dio(BaseOptions(
+          connectTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(minutes: 5),
+          followRedirects: true,
+          maxRedirects: 5,
+        ));
 
-      // 進捗イベントを順次流す
-      await for (final p in controller.stream(downloadFuture)) {
-        yield UpdateProgress(percent: p);
+        // 実際にダウンロード完了まで await する (途中で onReceiveProgress が percent を流す)
+        await dio.download(
+          url,
+          apkFile.path,
+          onReceiveProgress: (received, total) {
+            if (total > 0) {
+              controller.add(UpdateProgress(percent: received / total * 100));
+            }
+          },
+        );
+
+        // ダウンロード完了確認
+        final size = await apkFile.length();
+        if (size < 1024 * 1024) {
+          controller.add(UpdateProgress(
+              error: DebugProvider.verbose
+                  ? 'ダウンロード失敗 (サイズ: ${size}B)'
+                  : 'ダウンロードに失敗しました'));
+          await controller.close();
+          return;
+        }
+
+        controller.add(const UpdateProgress(percent: 100));
+        await Future.delayed(const Duration(milliseconds: 200));
+
+        // OSのインストーラ起動
+        final result = await OpenFilex.open(apkFile.path);
+        if (result.type != ResultType.done) {
+          controller.add(UpdateProgress(
+              error: DebugProvider.verbose
+                  ? 'インストール起動失敗: ${result.message} (type=${result.type})'
+                  : 'インストール画面を開けませんでした'));
+        } else {
+          controller.add(const UpdateProgress(percent: 100, done: true));
+        }
+      } on DioException catch (e) {
+        final detail = '${e.message ?? e.type.name}'
+            '${e.response != null ? " (HTTP ${e.response!.statusCode})" : ""}';
+        controller.add(UpdateProgress(
+            error: DebugProvider.verbose
+                ? 'ダウンロード失敗: $detail'
+                : 'ダウンロードに失敗しました'));
+      } catch (e) {
+        controller.add(UpdateProgress(
+            error: DebugProvider.verbose ? '$e' : '更新に失敗しました'));
+      } finally {
+        await controller.close();
       }
+    }();
 
-      // OSのインストーラ起動
-      yield const UpdateProgress(percent: 100);
-      final result = await OpenFilex.open(apkFile.path);
-      if (result.type != ResultType.done) {
-        yield UpdateProgress(error: 'インストール起動失敗: ${result.message}');
-        return;
-      }
-      yield const UpdateProgress(percent: 100, done: true);
-    } catch (e) {
-      yield UpdateProgress(error: '$e');
-    }
+    return controller.stream;
   }
 
-  /// SemVer 比較: a<b → -1, a==b → 0, a>b → 1
   static int _compare(String a, String b) {
     final ap = _parts(a);
     final bp = _parts(b);
@@ -122,30 +153,4 @@ class UpdateService {
 
   static List<int> _parts(String v) =>
       v.split('+').first.split('.').map((s) => int.tryParse(s) ?? 0).toList();
-}
-
-/// dio.download の onReceiveProgress を Stream<double> に変換するヘルパー。
-class _ProgressController {
-  double _last = 0;
-  bool _changed = false;
-
-  void update(double p) {
-    if ((p - _last).abs() >= 0.5 || p >= 99.9) {
-      _last = p;
-      _changed = true;
-    }
-  }
-
-  Stream<double> stream(Future<dynamic> downloadFuture) async* {
-    bool done = false;
-    downloadFuture.whenComplete(() => done = true);
-    while (!done) {
-      if (_changed) {
-        _changed = false;
-        yield _last;
-      }
-      await Future.delayed(const Duration(milliseconds: 100));
-    }
-    yield 100;
-  }
 }

@@ -2,7 +2,7 @@ class UserModel {
   final int id;
   final String email;
   final String name;
-  final int? grade;
+  final String? grade;
   final String? userClass;
   final String role;
   final List<String> positions;
@@ -25,7 +25,7 @@ class UserModel {
         id:                  j['id'] as int,
         email:               j['email'] as String,
         name:                j['name'] as String,
-        grade:               j['grade'] as int?,
+        grade:               j['grade']?.toString(),
         userClass:           j['user_class'] as String?,
         role:                j['role'] as String,
         positions:           List<String>.from(j['positions'] ?? []),

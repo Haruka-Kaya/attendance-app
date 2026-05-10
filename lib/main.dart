@@ -8,9 +8,11 @@ import 'providers/event_provider.dart';
 import 'providers/attendance_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/language_provider.dart';
+import 'providers/debug_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/change_password_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/update_screen.dart';
 import 'services/update_service.dart';
 
@@ -29,6 +31,7 @@ class AttendanceApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
+        ChangeNotifierProvider(create: (_) => DebugProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()..init()),
         ChangeNotifierProvider(create: (_) => EventProvider()),
         ChangeNotifierProvider(create: (_) => AttendanceProvider()),
@@ -103,7 +106,8 @@ class _AppGateState extends State<_AppGate> {
     }
     if (!auth.isLoggedIn) return const LoginScreen();
     if (auth.mustChangePw) {
-      return const ChangePasswordScreen(forced: true);
+      // 初回ログインはオンボーディング画面 (パスワード+プロフィール一括登録)
+      return const OnboardingScreen();
     }
     return const MainScreen();
   }

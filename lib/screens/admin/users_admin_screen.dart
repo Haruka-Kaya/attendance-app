@@ -223,8 +223,10 @@ class _UserFormState extends State<_UserForm> {
   final _emailCtl  = TextEditingController();
   final _passCtl   = TextEditingController();
   String _role     = 'user';
-  String _grade    = '1';
-  String _class    = 'A';
+  String? _grade; // null = 未設定
+  String _class    = '';
+
+  static const _gradeOptions = ['M1', 'M2', 'M3', 'H1', 'H2', 'H3', 'H4', 'OB'];
   final Set<String> _positions = {};
   bool _saving = false;
 
@@ -236,8 +238,9 @@ class _UserFormState extends State<_UserForm> {
       _nameCtl.text  = u['name'] ?? '';
       _emailCtl.text = u['email'] ?? '';
       _role          = u['role'] ?? 'user';
-      _grade         = u['grade']?.toString() ?? '1';
-      _class         = u['user_class'] ?? 'A';
+      final gRaw = u['grade']?.toString();
+      _grade         = (gRaw != null && _gradeOptions.contains(gRaw)) ? gRaw : null;
+      _class         = u['user_class'] ?? '';
       _positions.addAll(List<String>.from(u['positions'] ?? []));
     }
   }
@@ -257,7 +260,7 @@ class _UserFormState extends State<_UserForm> {
       'name':       _nameCtl.text.trim(),
       'email':      _emailCtl.text.trim(),
       'role':       _role,
-      'grade':      int.tryParse(_grade) ?? 1,
+      'grade':      _grade, // null OK
       'user_class': _class,
       'positions':  _positions.toList(),
     };
@@ -343,16 +346,17 @@ class _UserFormState extends State<_UserForm> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: DropdownButtonFormField<String>(
+                  child: DropdownButtonFormField<String?>(
                     value: _grade,
                     isDense: true,
                     decoration: const InputDecoration(
-                        labelText: '学年', border: OutlineInputBorder(), isDense: true),
-                    items: ['1', '2', '3']
-                        .map((g) => DropdownMenuItem(
-                            value: g, child: Text('${g}年')))
-                        .toList(),
-                    onChanged: (v) => setState(() => _grade = v!),
+                        labelText: '学年 (任意)', border: OutlineInputBorder(), isDense: true),
+                    items: [
+                      const DropdownMenuItem<String?>(value: null, child: Text('未設定')),
+                      for (final g in _gradeOptions)
+                        DropdownMenuItem<String?>(value: g, child: Text(g)),
+                    ],
+                    onChanged: (v) => setState(() => _grade = v),
                   ),
                 ),
               ]),

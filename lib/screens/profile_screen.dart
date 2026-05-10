@@ -1,18 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/language_provider.dart';
+import '../providers/debug_provider.dart';
 import 'change_password_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
+
+  Future<String> _versionString() async {
+    final pkg = await PackageInfo.fromPlatform();
+    return 'v${pkg.version}+${pkg.buildNumber}';
+  }
 
   @override
   Widget build(BuildContext context) {
     final auth  = context.watch<AuthProvider>();
     final theme = context.watch<ThemeProvider>();
     final lang  = context.watch<LanguageProvider>();
+    final dbg   = context.watch<DebugProvider>();
     final user  = auth.user;
 
     return Scaffold(
@@ -101,6 +109,36 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
+          // 詳細設定 (折りたたみ)
+          Card(
+            child: ExpansionTile(
+              leading: const Icon(Icons.tune),
+              title: Text(lang.lang == 'en' ? 'Advanced' : '詳細設定'),
+              subtitle: Text(
+                lang.lang == 'en'
+                    ? 'Developer / troubleshooting'
+                    : '開発者・トラブルシュート用',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+              ),
+              children: [
+                SwitchListTile(
+                  secondary: const Icon(Icons.bug_report_outlined),
+                  title: Text(
+                      lang.lang == 'en' ? 'Verbose error messages' : '詳細エラー表示'),
+                  subtitle: Text(
+                    lang.lang == 'en'
+                        ? 'Show HTTP codes, exception types, etc.'
+                        : 'HTTP コードや例外型などを表示',
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                  value: dbg.verboseErrors,
+                  onChanged: (v) => dbg.setVerbose(v),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // ログアウト
           OutlinedButton.icon(
             style: OutlinedButton.styleFrom(
@@ -129,6 +167,25 @@ class ProfileScreen extends StatelessWidget {
                 await context.read<AuthProvider>().logout();
               }
             },
+          ),
+          const SizedBox(height: 24),
+
+          // バージョン表示
+          FutureBuilder<String>(
+            future: _versionString(),
+            builder: (_, snap) => Center(
+              child: Text(
+                snap.data ?? '',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: Text(
+              '© 2026 賀屋悠',
+              style: TextStyle(fontSize: 10, color: Colors.grey.shade400),
+            ),
           ),
         ],
       ),
