@@ -10,6 +10,8 @@ import 'providers/theme_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/change_password_screen.dart';
+import 'screens/update_screen.dart';
+import 'services/update_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +22,7 @@ void main() async {
 class AttendanceApp extends StatelessWidget {
   const AttendanceApp({super.key});
 
-  28 28 changenotifierprovider(create:arted with flutter development, view the28 changenotifierprovider(create: ( _ )28 lider(create: authprovider()..i28 lt()),tarted with flutter development, view the28 der(create: authprovider().. in:28 .init()),28 ifierprovider(create: authprov.28 'provider (create: authprovider(28 changenotifierprovider(create:28 hangenotifierprovider(create: ( _ )28 changenotifierprovider(create:28 vider(create:28 . init()),28 authprovider(). .init()),create: eventprovider()),lerprovider(create: eventprovider()),'rovider(create: eventprovider()),'entprovider()),')))@override
+  @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
@@ -58,13 +60,43 @@ class AttendanceApp extends StatelessWidget {
   }
 }
 
-class _AppGate extends StatelessWidget {
+class _AppGate extends StatefulWidget {
   const _AppGate();
+  @override
+  State<_AppGate> createState() => _AppGateState();
+}
+
+class _AppGateState extends State<_AppGate> {
+  UpdateInfo? _updateInfo;
+  bool _updateChecked = false;
+  bool _updateSkipped = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkUpdate();
+  }
+
+  Future<void> _checkUpdate() async {
+    final info = await UpdateService.check();
+    if (!mounted) return;
+    setState(() { _updateInfo = info; _updateChecked = true; });
+  }
 
   @override
   Widget build(BuildContext context) {
+    // アップデート確認 (起動時のみ・スキップ可能)
+    if (_updateChecked && _updateInfo != null && !_updateSkipped) {
+      return UpdateScreen(
+        info: _updateInfo!,
+        onSkipped: _updateInfo!.isForced
+            ? null
+            : () => setState(() => _updateSkipped = true),
+      );
+    }
+
     final auth = context.watch<AuthProvider>();
-    if (!auth.initialized) {
+    if (!auth.initialized || !_updateChecked) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (!auth.isLoggedIn) return const LoginScreen();

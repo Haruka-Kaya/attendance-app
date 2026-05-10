@@ -1,7 +1,7 @@
 name: attendance_app
 description: 部活動出欠管理アプリ
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -33,6 +33,10 @@ dependencies:
 
   # UI アイコン
   cupertino_icons: ^1.0.8
+
+  # OTA アップデート
+  package_info_plus: ^8.0.0
+  ota_update: ^6.0.0
 
 dev_dependencies:
   flutter_test:
