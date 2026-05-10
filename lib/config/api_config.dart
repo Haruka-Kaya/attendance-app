@@ -4,8 +4,8 @@
 // ================================================================
 
 class ApiConfig {
-  // ── 本番 (Coolify on Vultr) ──────────────────────────────────
-  static const String kBaseUrl = 'http://mtsxkz3e7kjdnh1kp6t3l5la.202.182.114.246.sslip.io';
+  // ── 本番 (Coolify on Vultr + DuckDNS + Let's Encrypt) ────────
+  static const String kBaseUrl = 'https://zenshin9498.duckdns.org';
 
   // ── ローカル開発に戻すとき ────────────────────────────────────
   // Android エミュレータ → 10.0.2.2 がホストの localhost に対応

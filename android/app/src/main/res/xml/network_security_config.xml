@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- 本番VPS (Vultr) -->
+    <!-- 本番はHTTPSなのでcleartext不要(デフォルトでHTTPSのみ許可) -->
+    <!-- 万が一HTTP fallbackが必要な場合のVPS IP -->
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">202.182.114.246.sslip.io</domain>
         <domain includeSubdomains="false">202.182.114.246</domain>
     </domain-config>
     <!-- ローカル開発: Androidエミュレータ -->
