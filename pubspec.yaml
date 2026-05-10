@@ -1,7 +1,7 @@
 name: attendance_app
 description: 部活動出欠管理アプリ
 publish_to: 'none'
-version: 1.4.0+8
+version: 1.5.0+9
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -38,6 +38,9 @@ dependencies:
   package_info_plus: ^8.0.0
   path_provider: ^2.1.0
   open_filex: ^4.5.0
+
+  # Liquid Glass UI (iOS 26 デザイン言語)
+  liquid_glass_widgets: ^0.10.9
 
 dev_dependencies:
   flutter_test:
