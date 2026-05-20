@@ -5,7 +5,9 @@ import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/language_provider.dart';
 import '../providers/debug_provider.dart';
+import '../services/update_service.dart';
 import 'change_password_screen.dart';
+import 'update_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -13,6 +15,41 @@ class ProfileScreen extends StatelessWidget {
   Future<String> _versionString() async {
     final pkg = await PackageInfo.fromPlatform();
     return 'v${pkg.version}+${pkg.buildNumber}';
+  }
+
+  Future<void> _checkUpdate(BuildContext context, String lang) async {
+    // 確認中スピナー
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    final info = await UpdateService.check();
+    if (!context.mounted) return;
+    Navigator.pop(context); // ローディング閉じる
+
+    if (info != null) {
+      // アップデートあり → UpdateScreen を表示
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => UpdateScreen(
+            info: info,
+            onSkipped: info.isForced ? null : () => Navigator.pop(context),
+          ),
+        ),
+      );
+    } else {
+      // 最新版
+      final pkg = await PackageInfo.fromPlatform();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(lang == 'en'
+            ? 'You are on the latest version (v${pkg.version})'
+            : '最新バージョンです (v${pkg.version})'),
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
   }
 
   @override
@@ -24,9 +61,16 @@ class ProfileScreen extends StatelessWidget {
     final user  = auth.user;
 
     return Scaffold(
-      appBar: AppBar(title: Text(lang.t('nav.profile'))),
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(lang.t('nav.profile')),
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+            16, 8, 16,
+            MediaQuery.of(context).padding.bottom + 80),
         children: [
           // ユーザー情報
           Card(
@@ -94,6 +138,14 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
               const Divider(height: 1),
+              // アップデート確認
+              ListTile(
+                leading: const Icon(Icons.system_update_alt),
+                title: Text(lang.lang == 'en' ? 'Check for update' : 'アップデートを確認'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _checkUpdate(context, lang.lang),
+              ),
+              const Divider(height: 1),
               // パスワード変更
               ListTile(
                 leading: const Icon(Icons.lock_outline),
@@ -133,6 +185,20 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   value: dbg.verboseErrors,
                   onChanged: (v) => dbg.setVerbose(v),
+                ),
+                SwitchListTile(
+                  secondary: const Icon(Icons.fullscreen),
+                  title: Text(lang.lang == 'en'
+                      ? 'Hide system navigation bar'
+                      : 'システムナビゲーションバーを隠す'),
+                  subtitle: Text(
+                    lang.lang == 'en'
+                        ? 'Hide the bottom 3-button bar (swipe up from bottom to show)'
+                        : '下の3ボタンバーを隠す (下端からスワイプで一時表示)',
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                  value: dbg.hideNavBar,
+                  onChanged: (v) => dbg.setHideNavBar(v),
                 ),
               ],
             ),

@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import '../providers/event_provider.dart';
 import '../providers/attendance_provider.dart';
 import '../widgets/event_card.dart';
+import '../widgets/empty_state.dart';
 import 'event_detail_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -38,7 +39,10 @@ class _DashboardScreenState extends State<DashboardScreen>
     final theme       = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: const Text('ホーム'),
         actions: [
           IconButton(
@@ -70,7 +74,9 @@ class _DashboardScreenState extends State<DashboardScreen>
       body: RefreshIndicator(
         onRefresh: () async => _load(),
         child: ListView(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.fromLTRB(
+              12, 8, 12,
+              MediaQuery.of(context).padding.bottom + 80),
           children: [
             // user greeting
             Card(
@@ -152,23 +158,59 @@ class _DashboardScreenState extends State<DashboardScreen>
               const SizedBox(height: 12),
             ],
 
-            // upcoming events
-            Text('直近の活動',
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
+            // 今日の活動 (1タップ出欠登録)
+            Builder(builder: (_) {
+              final todayEvents = eventProv.upcoming.where((e) => e.isToday).toList();
+              if (todayEvents.isEmpty) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
+                      child: Row(children: [
+                        Icon(Icons.bolt, size: 16, color: theme.colorScheme.primary),
+                        const SizedBox(width: 4),
+                        Text('今日の活動',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.primary)),
+                      ]),
+                    ),
+                    ...todayEvents.map((e) => EventCard(
+                          event: e,
+                          showQuickActions: true,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => EventDetailScreen(event: e)),
+                          ).then((_) => _load()),
+                        )),
+                  ],
+                ),
+              );
+            }),
+
+            // 直近の活動
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
+              child: Text('直近の活動',
+                  style: theme.textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+            ),
             if (eventProv.loading)
               const Center(child: Padding(
                 padding: EdgeInsets.all(24),
                 child: CircularProgressIndicator(),
               ))
             else if (eventProv.upcoming.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(24),
-                child: Center(child: Text('予定されている活動はありません')),
+              const EmptyState(
+                icon: Icons.event_busy_outlined,
+                title: '予定されている活動はありません',
               )
             else
-              ...eventProv.upcoming.map((e) => EventCard(
+              ...eventProv.upcoming.where((e) => !e.isToday).map((e) => EventCard(
                     event: e,
                     onTap: () => Navigator.push(
                       context,

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import '../providers/attendance_provider.dart';
 import '../models/attendance.dart';
 import '../widgets/status_chip.dart';
+import '../widgets/empty_state.dart';
 
 class MyAttendanceScreen extends StatefulWidget {
   const MyAttendanceScreen({super.key});
@@ -33,7 +35,9 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen>
     final records = _filtered(prov.records);
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
         title: const Text('出欠記録'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
@@ -62,7 +66,11 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen>
           : RefreshIndicator(
               onRefresh: () => prov.load(),
               child: records.isEmpty
-                  ? const Center(child: Text('記録がありません'))
+                  ? const EmptyState(
+                      icon: Icons.assignment_outlined,
+                      title: '記録がありません',
+                      message: '出欠が登録されるとここに表示されます',
+                    )
                   : ListView.separated(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 8),

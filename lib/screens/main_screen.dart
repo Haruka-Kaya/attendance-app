@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import '../config/glass_theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
+import '../widgets/gradient_background.dart';
 import 'dashboard_screen.dart';
 import 'calendar_screen.dart';
 import 'my_attendance_screen.dart';
@@ -29,64 +32,58 @@ class _MainScreenState extends State<MainScreen> {
     final isAdmin   = user?.isAdmin   ?? false;
     final isManager = user?.isManager ?? false;
 
-    final destinations = <(NavigationDestination, Widget)>[
-      (
-        NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home),
-            label: lang.t('nav.home')),
-        const DashboardScreen(),
-      ),
-      (
-        NavigationDestination(
-            icon: const Icon(Icons.calendar_month_outlined),
-            selectedIcon: const Icon(Icons.calendar_month),
-            label: lang.t('nav.calendar')),
-        const CalendarScreen(),
-      ),
-      (
-        NavigationDestination(
-            icon: const Icon(Icons.assignment_outlined),
-            selectedIcon: const Icon(Icons.assignment),
-            label: lang.t('nav.my_attendance')),
-        const MyAttendanceScreen(),
-      ),
+    final tabs = <_TabSpec>[
+      _TabSpec(Icons.home_outlined, Icons.home, lang.t('nav.home'),
+          const DashboardScreen()),
+      _TabSpec(Icons.calendar_month_outlined, Icons.calendar_month,
+          lang.t('nav.calendar'), const CalendarScreen()),
+      _TabSpec(Icons.assignment_outlined, Icons.assignment,
+          lang.t('nav.my_attendance'), const MyAttendanceScreen()),
       if (isAdmin || isManager)
-        (
-          NavigationDestination(
-              icon: const Icon(Icons.admin_panel_settings_outlined),
-              selectedIcon: const Icon(Icons.admin_panel_settings),
-              label: lang.t('nav.admin')),
-          _AdminShell(isAdmin: isAdmin),
-        ),
-      (
-        NavigationDestination(
-            icon: const Icon(Icons.person_outline),
-            selectedIcon: const Icon(Icons.person),
-            label: lang.t('nav.profile')),
-        const ProfileScreen(),
-      ),
+        _TabSpec(Icons.admin_panel_settings_outlined,
+            Icons.admin_panel_settings, lang.t('nav.admin'),
+            _AdminShell(isAdmin: isAdmin)),
+      _TabSpec(Icons.person_outline, Icons.person, lang.t('nav.profile'),
+          const ProfileScreen()),
     ];
 
-    // clamp index in case admin tab is hidden/shown after role change
-    final maxIndex = destinations.length - 1;
+    final maxIndex = tabs.length - 1;
     if (_index > maxIndex) {
       WidgetsBinding.instance.addPostFrameCallback(
           (_) => setState(() => _index = 0));
     }
 
     return Scaffold(
-      body: IndexedStack(
-        index: _index.clamp(0, maxIndex),
-        children: [for (final (_, screen) in destinations) screen],
+      extendBody: true,
+      body: GradientBackground(
+        child: IndexedStack(
+          index: _index.clamp(0, maxIndex),
+          children: [for (final t in tabs) t.screen],
+        ),
       ),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: GlassBottomBar(
         selectedIndex: _index.clamp(0, maxIndex),
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: [for (final (dest, _) in destinations) dest],
+        onTabSelected: (i) => setState(() => _index = i),
+        glassSettings: kGlassSettings,
+        tabs: [
+          for (final t in tabs)
+            GlassBottomBarTab(
+              label: t.label,
+              icon: Icon(t.icon),
+              activeIcon: Icon(t.activeIcon),
+            ),
+        ],
       ),
     );
   }
+}
+
+class _TabSpec {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final Widget screen;
+  _TabSpec(this.icon, this.activeIcon, this.label, this.screen);
 }
 
 class _AdminShell extends StatefulWidget {
@@ -110,7 +107,9 @@ class _AdminShellState extends State<_AdminShell> {
     return DefaultTabController(
       length: tabs.length,
       child: Scaffold(
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
+          backgroundColor: Colors.transparent,
           title: const Text('管理'),
           bottom: TabBar(
             isScrollable: true,

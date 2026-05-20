@@ -4,6 +4,7 @@ import 'package:table_calendar/table_calendar.dart';
 import '../providers/event_provider.dart';
 import '../models/event.dart';
 import '../widgets/event_card.dart';
+import '../widgets/empty_state.dart';
 import 'event_detail_screen.dart';
 
 class CalendarScreen extends StatefulWidget {
@@ -47,7 +48,12 @@ class _CalendarScreenState extends State<CalendarScreen>
     final dayEvents = eventProv.eventsOnDay(selected);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('カレンダー')),
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text('カレンダー'),
+      ),
       body: Column(
         children: [
           TableCalendar<EventModel>(
@@ -64,10 +70,6 @@ class _CalendarScreenState extends State<CalendarScreen>
               _loadMonth(foc);
             },
             calendarStyle: CalendarStyle(
-              markerDecoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                shape: BoxShape.circle,
-              ),
               todayDecoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primaryContainer,
                 shape: BoxShape.circle,
@@ -76,6 +78,34 @@ class _CalendarScreenState extends State<CalendarScreen>
                 color: Theme.of(context).colorScheme.primary,
                 shape: BoxShape.circle,
               ),
+            ),
+            calendarBuilders: CalendarBuilders<EventModel>(
+              markerBuilder: (ctx, day, events) {
+                if (events.isEmpty) return null;
+                // 自分のステータスを優先順位で集計 (present > partial > absent)
+                final colors = <Color>{};
+                for (final e in events) {
+                  colors.add(switch (e.myStatus) {
+                    'present' => Colors.green,
+                    'partial' => Colors.orange,
+                    _         => Colors.red.shade300,
+                  });
+                }
+                return Positioned(
+                  bottom: 4,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (final c in colors.take(3))
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 1),
+                          width: 6, height: 6,
+                          decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+                        ),
+                    ],
+                  ),
+                );
+              },
             ),
             headerStyle: const HeaderStyle(
               formatButtonVisible: false,
@@ -87,7 +117,10 @@ class _CalendarScreenState extends State<CalendarScreen>
             child: eventProv.loading
                 ? const Center(child: CircularProgressIndicator())
                 : dayEvents.isEmpty
-                    ? const Center(child: Text('この日の活動はありません'))
+                    ? const EmptyState(
+                        icon: Icons.event_available_outlined,
+                        title: 'この日の活動はありません',
+                      )
                     : ListView.builder(
                         padding: const EdgeInsets.only(top: 4, bottom: 12),
                         itemCount: dayEvents.length,

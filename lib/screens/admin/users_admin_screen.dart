@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
+import '../../widgets/empty_state.dart';
 
 class UsersAdminScreen extends StatefulWidget {
   const UsersAdminScreen({super.key});
@@ -15,6 +16,9 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
 
   List<Map<String, dynamic>> _users = [];
   bool _loading = false;
+  String _query = '';
+  String _filterPos = '';   // '' / tech / ops / teacher
+  String _filterRole = '';  // '' / user / manager / admin
 
   @override
   void initState() {
@@ -37,25 +41,92 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
     }
   }
 
+  List<Map<String, dynamic>> get _filtered {
+    final q = _query.trim().toLowerCase();
+    return _users.where((u) {
+      if (q.isNotEmpty) {
+        final name  = (u['name']  as String? ?? '').toLowerCase();
+        final email = (u['email'] as String? ?? '').toLowerCase();
+        if (!name.contains(q) && !email.contains(q)) return false;
+      }
+      if (_filterPos.isNotEmpty) {
+        final positions = List<String>.from(u['positions'] ?? []);
+        if (!positions.contains(_filterPos)) return false;
+      }
+      if (_filterRole.isNotEmpty) {
+        if ((u['role'] ?? '') != _filterRole) return false;
+      }
+      return true;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final filtered = _filtered;
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showForm(context, null),
         child: const Icon(Icons.person_add),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: _users.isEmpty
-                  ? const Center(child: Text('ユーザーがいません'))
-                  : ListView.builder(
-                      padding: const EdgeInsets.only(bottom: 80),
-                      itemCount: _users.length,
-                      itemBuilder: (_, i) {
-                        final u = _users[i];
+      body: Column(
+        children: [
+          // 検索バー + フィルタ
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: '名前・メールで検索',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                isDense: true,
+                suffixIcon: _query.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () => setState(() => _query = '')),
+              ),
+              onChanged: (v) => setState(() => _query = v),
+            ),
+          ),
+          SizedBox(
+            height: 36,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              children: [
+                _chip('全班', '', isPos: true),
+                _chip('技術', 'tech', isPos: true),
+                _chip('運営', 'ops', isPos: true),
+                _chip('顧問', 'teacher', isPos: true),
+                const SizedBox(width: 12),
+                _chip('全権限', '', isPos: false),
+                _chip('一般', 'user', isPos: false),
+                _chip('管理者', 'manager', isPos: false),
+                _chip('最高権限', 'admin', isPos: false),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Text('${filtered.length} 件',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+          ),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: filtered.isEmpty
+                        ? const EmptyState(
+                            icon: Icons.search_off,
+                            title: '該当するユーザーがいません',
+                            message: '検索条件を変えてみてください',
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.only(bottom: 80),
+                            itemCount: filtered.length,
+                            itemBuilder: (_, i) {
+                              final u = filtered[i];
                         final role = u['role'] ?? 'user';
                         final positions = List<String>.from(u['positions'] ?? []);
                         final posLabel = positions.map((p) => switch (p) {
@@ -118,9 +189,32 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
                             },
                           ),
                         );
-                      },
-                    ),
-            ),
+                            },
+                          ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _chip(String label, String value, {required bool isPos}) {
+    final selected = isPos ? _filterPos == value : _filterRole == value;
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: ChoiceChip(
+        label: Text(label, style: const TextStyle(fontSize: 11)),
+        selected: selected,
+        onSelected: (_) => setState(() {
+          if (isPos) {
+            _filterPos = value;
+          } else {
+            _filterRole = value;
+          }
+        }),
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
     );
   }
 

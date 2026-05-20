@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/event_provider.dart';
 import '../../models/event.dart';
+import '../../widgets/empty_state.dart';
 
 class EventsAdminScreen extends StatefulWidget {
   const EventsAdminScreen({super.key});
@@ -37,7 +38,11 @@ class _EventsAdminScreenState extends State<EventsAdminScreen>
           : RefreshIndicator(
               onRefresh: () => prov.loadAll(),
               child: prov.all.isEmpty
-                  ? const Center(child: Text('活動がありません'))
+                  ? const EmptyState(
+                      icon: Icons.event_busy_outlined,
+                      title: '活動がありません',
+                      message: '右下の「+」ボタンから新しい活動を追加してください',
+                    )
                   : ListView.builder(
                       padding: const EdgeInsets.only(bottom: 80),
                       itemCount: prov.all.length,
@@ -152,12 +157,39 @@ class _EventFormState extends State<_EventForm> {
     if (d != null) setState(() => _date = d);
   }
 
+  Future<void> _pickTime(TextEditingController ctl, {required bool isStart}) async {
+    TimeOfDay? init;
+    if (ctl.text.contains(':')) {
+      final p = ctl.text.split(':');
+      init = TimeOfDay(hour: int.tryParse(p[0]) ?? 15, minute: int.tryParse(p[1]) ?? 0);
+    } else {
+      init = TimeOfDay(hour: isStart ? 15 : 17, minute: 0);
+    }
+    final t = await showTimePicker(
+      context: context,
+      initialTime: init,
+      builder: (ctx, child) => MediaQuery(
+        data: MediaQuery.of(ctx).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
+    );
+    if (t != null) {
+      ctl.text = '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+      setState(() {});
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate() || _date == null) {
       if (_date == null) {
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('日付を選択してください')));
       }
+      return;
+    }
+    if (_startCtl.text.isEmpty || _endCtl.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('開始/終了時刻を選択してください')));
       return;
     }
     setState(() => _saving = true);
@@ -225,24 +257,18 @@ class _EventFormState extends State<_EventForm> {
             const SizedBox(height: 8),
             Row(children: [
               Expanded(
-                child: TextFormField(
-                  controller: _startCtl,
-                  decoration: const InputDecoration(
-                      labelText: '開始時刻', hintText: '15:00',
-                      border: OutlineInputBorder(), isDense: true),
-                  validator: (v) =>
-                      (v == null || v.isEmpty) ? '入力してください' : null,
+                child: OutlinedButton.icon(
+                  onPressed: () => _pickTime(_startCtl, isStart: true),
+                  icon: const Icon(Icons.access_time, size: 16),
+                  label: Text(_startCtl.text.isEmpty ? '開始時刻' : _startCtl.text),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: TextFormField(
-                  controller: _endCtl,
-                  decoration: const InputDecoration(
-                      labelText: '終了時刻', hintText: '17:00',
-                      border: OutlineInputBorder(), isDense: true),
-                  validator: (v) =>
-                      (v == null || v.isEmpty) ? '入力してください' : null,
+                child: OutlinedButton.icon(
+                  onPressed: () => _pickTime(_endCtl, isStart: false),
+                  icon: const Icon(Icons.access_time, size: 16),
+                  label: Text(_endCtl.text.isEmpty ? '終了時刻' : _endCtl.text),
                 ),
               ),
             ]),
