@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/language_provider.dart';
 import '../services/update_service.dart';
 
 class UpdateScreen extends StatefulWidget {
@@ -12,36 +14,65 @@ class UpdateScreen extends StatefulWidget {
 
 class _UpdateScreenState extends State<UpdateScreen> {
   double _progress = 0;
-  String _status = '';
+  String _statusKey = '';    // 翻訳キー (空文字なら表示なし)
+  String _errorRaw  = '';    // 例外メッセージ (翻訳しない)
   bool _running = false;
   bool _failed = false;
 
   void _startUpdate() {
-    setState(() { _running = true; _failed = false; _status = 'ダウンロード中...'; });
+    setState(() {
+      _running = true;
+      _failed  = false;
+      _statusKey = 'update.downloading';
+      _errorRaw  = '';
+    });
     UpdateService.downloadAndInstall(widget.info.downloadUrl).listen((event) {
       if (!mounted) return;
       if (event.error != null) {
-        setState(() { _status = 'エラー: ${event.error}'; _failed = true; });
+        setState(() {
+          _statusKey = 'update.error';
+          _errorRaw  = event.error.toString();
+          _failed    = true;
+        });
         return;
       }
       setState(() {
         _progress = event.percent;
         if (event.percent >= 99.9 && !event.done) {
-          _status = 'インストーラを開いています...';
+          _statusKey = 'update.installing';
         } else if (event.done) {
-          _status = 'インストーラが起動しました';
+          _statusKey = 'update.installer_open';
         } else {
-          _status = 'ダウンロード中... ${event.percent.toStringAsFixed(0)}%';
+          _statusKey = 'update.downloading_pct';
         }
       });
     }, onError: (e) {
-      if (mounted) setState(() { _status = 'エラー: $e'; _failed = true; });
+      if (mounted) {
+        setState(() {
+          _statusKey = 'update.error';
+          _errorRaw  = e.toString();
+          _failed    = true;
+        });
+      }
     });
+  }
+
+  String _statusText(LanguageProvider lang) {
+    if (_statusKey.isEmpty) return '';
+    if (_statusKey == 'update.error') {
+      return '${lang.t('update.error')}: $_errorRaw';
+    }
+    if (_statusKey == 'update.downloading_pct') {
+      return lang.t('update.downloading_pct')
+          .replaceAll('{pct}', _progress.toStringAsFixed(0));
+    }
+    return lang.t(_statusKey);
   }
 
   @override
   Widget build(BuildContext context) {
     final info = widget.info;
+    final lang = context.watch<LanguageProvider>();
     return PopScope(
       canPop: false,
       child: Scaffold(
@@ -62,7 +93,9 @@ class _UpdateScreenState extends State<UpdateScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      info.isForced ? '必須アップデート' : '新しいバージョンが利用可能',
+                      info.isForced
+                          ? lang.t('update.required')
+                          : lang.t('update.available'),
                       textAlign: TextAlign.center,
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
@@ -83,7 +116,8 @@ class _UpdateScreenState extends State<UpdateScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('変更内容', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            Text(lang.t('update.notes'),
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 4),
                             Text(info.releaseNotes, style: const TextStyle(fontSize: 13)),
                           ],
@@ -93,7 +127,7 @@ class _UpdateScreenState extends State<UpdateScreen> {
                     ],
                     if (info.isForced) ...[
                       Text(
-                        'このバージョンはサポート対象外です。続行するには更新が必要です。',
+                        lang.t('update.forced_msg'),
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 12, color: Colors.orange.shade800),
                       ),
@@ -105,14 +139,16 @@ class _UpdateScreenState extends State<UpdateScreen> {
                         minHeight: 6,
                       ),
                       const SizedBox(height: 8),
-                      Text(_status, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12)),
+                      Text(_statusText(lang),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 12)),
                       const SizedBox(height: 16),
                     ],
                     SizedBox(
                       height: 48,
                       child: FilledButton.icon(
                         icon: const Icon(Icons.download),
-                        label: Text(_failed ? '再試行' : '今すぐ更新'),
+                        label: Text(_failed ? lang.t('update.retry') : lang.t('update.now')),
                         onPressed: (_running && !_failed) ? null : _startUpdate,
                       ),
                     ),
@@ -120,7 +156,7 @@ class _UpdateScreenState extends State<UpdateScreen> {
                       const SizedBox(height: 8),
                       TextButton(
                         onPressed: widget.onSkipped,
-                        child: const Text('後で'),
+                        child: Text(lang.t('update.later')),
                       ),
                     ],
                   ],
