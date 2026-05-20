@@ -1,7 +1,7 @@
 name: attendance_app
 description: 部活動出欠管理アプリ
 publish_to: 'none'
-version: 1.5.4+13
+version: 1.5.5+14
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
