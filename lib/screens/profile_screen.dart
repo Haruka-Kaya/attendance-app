@@ -186,20 +186,6 @@ class ProfileScreen extends StatelessWidget {
                   value: dbg.verboseErrors,
                   onChanged: (v) => dbg.setVerbose(v),
                 ),
-                SwitchListTile(
-                  secondary: const Icon(Icons.fullscreen),
-                  title: Text(lang.lang == 'en'
-                      ? 'Hide system navigation bar'
-                      : 'システムナビゲーションバーを隠す'),
-                  subtitle: Text(
-                    lang.lang == 'en'
-                        ? 'Hide the bottom 3-button bar (swipe up from bottom to show)'
-                        : '下の3ボタンバーを隠す (下端からスワイプで一時表示)',
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                  value: dbg.hideNavBar,
-                  onChanged: (v) => dbg.setHideNavBar(v),
-                ),
               ],
             ),
           ),

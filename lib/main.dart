@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -19,6 +20,12 @@ import 'services/update_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // システムナビゲーションバー (下の3ボタン) を常時隠す。
+  // ステータスバーは残す。下端からのスワイプで一時表示。
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.immersiveSticky,
+    overlays: [SystemUiOverlay.top],
+  );
   await initializeDateFormatting('ja_JP', null);
   await LiquidGlassWidgets.initialize();
   runApp(LiquidGlassWidgets.wrap(child: const AttendanceApp()));
