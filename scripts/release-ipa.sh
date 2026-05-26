@@ -1,20 +1,24 @@
 #!/usr/bin/env bash
-# 出欠管理 iOS リリーススクリプト (macOS 専用)
+# 出欠管理 iOS リリーススクリプト (macOS 専用・Xcode GUI 不要)
+#
 # 使い方: ./scripts/release-ipa.sh 1.6.0 "リリースノート"
+#
+# 前提:
+#   - Xcode に Apple ID がサインイン済み (初回のみ GUI で: Xcode → Settings → Accounts)
+#   - CocoaPods インストール済み
+#   - Flutter インストール済み
 #
 # 動作:
 #   1. pubspec.yaml の version を更新
 #   2. pod install
-#   3. flutter build ipa --release
+#   3. flutter build ipa --export-options-plist (CLI のみ、Xcode GUI 不要)
 #   4. xcrun altool で App Store Connect (TestFlight) にアップロード
 #   5. git push
 #
-# 必要な環境変数 (.env.ios で source 推奨):
+# 環境変数 (必須):
 #   APP_STORE_CONNECT_KEY_ID     App Store Connect API Key ID
 #   APP_STORE_CONNECT_ISSUER_ID  同 Issuer ID
-#   APP_STORE_CONNECT_KEY_PATH   p8 ファイルのパス
-#
-# 詳細手順: IOS_BUILD.md を参照
+#   APP_STORE_CONNECT_KEY_PATH   .p8 ファイルのパス
 
 set -euo pipefail
 
@@ -35,6 +39,12 @@ fi
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
+EXPORT_OPTIONS="$REPO_ROOT/ios/ExportOptions.plist"
+if [[ ! -f "$EXPORT_OPTIONS" ]]; then
+  echo "Error: ios/ExportOptions.plist not found"
+  exit 1
+fi
+
 echo "=== iOS Release v$VERSION ==="
 
 # 1. pubspec.yaml の version を bump
@@ -44,33 +54,29 @@ NEW_CODE=$((CODE + 1))
 echo
 echo "[1/5] pubspec.yaml: $CURRENT_LINE -> version: $VERSION+$NEW_CODE"
 sed -i.bak -E "s/^version:.*/version: $VERSION+$NEW_CODE/" pubspec.yaml
-rm pubspec.yaml.bak
+rm -f pubspec.yaml.bak
 
 # 2. CocoaPods
 echo
 echo "[2/5] pod install"
 (cd ios && pod install)
 
-# 3. flutter build ipa
+# 3. flutter build ipa (Xcode GUI 不要)
 echo
 echo "[3/5] flutter build ipa --release"
 flutter pub get
-flutter build ipa --release
+flutter build ipa --release --export-options-plist="$EXPORT_OPTIONS"
 
-IPA_PATH="build/ios/ipa/attendance_app.ipa"
-if [[ ! -f "$IPA_PATH" ]]; then
-  # Flutter のバージョンによっては別名で出力される
-  IPA_PATH=$(find build/ios/ipa -name '*.ipa' | head -1)
-fi
-[[ -f "$IPA_PATH" ]] || { echo "IPA not found"; exit 1; }
+IPA_PATH=$(find build/ios/ipa -name '*.ipa' 2>/dev/null | head -1)
+[[ -f "$IPA_PATH" ]] || { echo "Error: IPA not found in build/ios/ipa/"; exit 1; }
 echo "  Built: $IPA_PATH ($(du -h "$IPA_PATH" | cut -f1))"
 
 # 4. App Store Connect (TestFlight) にアップロード
 echo
-echo "[4/5] Uploading to App Store Connect"
-: "${APP_STORE_CONNECT_KEY_ID:?env var required}"
-: "${APP_STORE_CONNECT_ISSUER_ID:?env var required}"
-: "${APP_STORE_CONNECT_KEY_PATH:?env var required}"
+echo "[4/5] Uploading to TestFlight via xcrun altool"
+: "${APP_STORE_CONNECT_KEY_ID:?env APP_STORE_CONNECT_KEY_ID is required}"
+: "${APP_STORE_CONNECT_ISSUER_ID:?env APP_STORE_CONNECT_ISSUER_ID is required}"
+: "${APP_STORE_CONNECT_KEY_PATH:?env APP_STORE_CONNECT_KEY_PATH is required}"
 
 xcrun altool --upload-app \
   --type ios \
@@ -88,5 +94,5 @@ git push
 
 echo
 echo "[OK] Released iOS v$VERSION"
-echo "  TestFlight: https://appstoreconnect.apple.com/apps -> 出欠管理 -> TestFlight"
-echo "  ビルド処理に約 15-30 分かかります。完了したらメール通知が来ます。"
+echo "  TestFlight: https://appstoreconnect.apple.com → ZENSHIN-Attendance → TestFlight"
+echo "  ビルド処理に 15-30 分かかります。完了メールが Apple ID 宛に届きます。"

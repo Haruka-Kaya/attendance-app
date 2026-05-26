@@ -108,36 +108,51 @@ flutter run --release   # 実機にインストール
 
 iPhone の **設定 → 一般 → VPN とデバイス管理** で開発者プロファイルを信頼する必要がある場合あり。
 
-### Phase 5: TestFlight 配布 (本命)
+### Phase 5: TestFlight 配布 (本命・全 CLI — Xcode GUI 不要)
 
-1. `ios/Runner.xcworkspace` を **Xcode で開く** (`.xcodeproj` ではなく `.xcworkspace`)
-2. 上部ターゲット → `Any iOS Device (arm64)`
-3. Runner ターゲット → **Signing & Capabilities** → Team を賀屋の Developer Team (`7482F26LUS`) に設定
-4. **「Automatically manage signing」** を ON
-5. メニュー: **Product → Archive** (3〜5分)
-6. Organizer ウィンドウ → archive 選択 → **Distribute App** → **App Store Connect** → **Upload**
-7. App Store Connect ([appstoreconnect.apple.com](https://appstoreconnect.apple.com)) → **TestFlight** タブ:
-   - ビルド処理: 約 15〜30分
-   - 内部テスターを追加 (Apple ID 招待)
+> **重要**: Xcode の GUI 操作は Phase 2 の Apple ID サインインだけ。ビルドから TestFlight アップロードまで全部 CLI で実行可能。Claude が自走できる。
 
-テスターは iPhone に **TestFlight** アプリを入れて招待リンクから参加。
+#### 手動 CLI (1回ずつ実行する場合)
 
-### Phase 6: CLI 自動化 (オプション)
+```bash
+# IPA ビルド (ExportOptions.plist で署名設定済み)
+flutter build ipa --release --export-options-plist=ios/ExportOptions.plist
 
-ユーザーが `.p8` ファイルを持っている。以下の環境変数を設定して `release-ipa.sh` で一発配布:
+# TestFlight アップロード (環境変数に API キー情報が必要)
+xcrun altool --upload-app \
+  --type ios \
+  --file build/ios/ipa/*.ipa \
+  --apiKey "$APP_STORE_CONNECT_KEY_ID" \
+  --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
+```
+
+#### 自動化スクリプト (推奨)
+
+ユーザーが `.p8` ファイルを持っている。環境変数を設定して `release-ipa.sh` で全工程を一発実行:
 
 ```bash
 export APP_STORE_CONNECT_KEY_ID="<Key ID>"
 export APP_STORE_CONNECT_ISSUER_ID="<Issuer ID>"
 export APP_STORE_CONNECT_KEY_PATH="$HOME/.appstoreconnect/<ファイル名>.p8"
 
-chmod +x scripts/release-ipa.sh
+chmod +x scripts/release-ipa.sh   # 初回のみ
 ./scripts/release-ipa.sh 1.6.0 "iOS版初回リリース"
 ```
 
-Key ID / Issuer ID / .p8 ファイルは **ユーザーに聞くこと** (秘密情報なのでこのファイルには書かない)。
+Key ID / Issuer ID / .p8 ファイルパスは **ユーザーに聞くこと** (秘密情報なのでこのファイルには書かない)。
 
-### Phase 7: 後片付け (Mac を返す前)
+#### TestFlight 配布確認
+
+App Store Connect ([appstoreconnect.apple.com](https://appstoreconnect.apple.com)) → **TestFlight** タブ:
+- ビルド処理: 約 15〜30分
+- 処理完了したら内部テスターを追加 (Apple ID で招待)
+- テスターは iPhone に **TestFlight** アプリを入れて招待リンクから参加
+
+### Phase 5 補足: ExportOptions.plist
+
+`ios/ExportOptions.plist` が署名・アップロード設定を持っている。Team ID `7482F26LUS`、automatic signing、app-store-connect method。変更不要。
+
+### Phase 6: 後片付け (Mac を返す前)
 
 友達の Mac に賀屋の情報を残さないように:
 
