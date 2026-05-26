@@ -1,152 +1,219 @@
-# iOS / iPhone ビルド手順
+# iOS ビルド — Claude 引継ぎドキュメント
 
-このリポジトリは Flutter 製で iOS ターゲットもセット済み。
-
-| 項目 | 値 |
-|---|---|
-| Bundle ID | `jp.zenshin9498.attendance` |
-| 表示名 | `出欠管理` |
-| 配布方法 | Apple Developer Program + TestFlight |
-| OTA アップデート | **iOS では無効** (`UpdateService.isSupported` が false 固定) |
-| 最小 iOS バージョン | プロジェクト初期値 (`flutter create` 既定) |
-
-> **OTA について**: iOS は OS の制約で任意 IPA をアプリから DL/インストールできないため、Android の `release-apk.ps1` 相当の自動更新フローは作らない。配信は **TestFlight / App Store** に一本化する。
+> **このファイルは Mac 上で新しい Claude Code セッションを開始した際に、前の会話の全文脈を引き継ぐためのドキュメントです。** 人間向けの手順書ではなく、Claude が読んで自走するための情報源。
 
 ---
 
-## 1. 事前準備 (Mac 借りる前)
+## ユーザー: 賀屋悠 (かや はるか)
 
-### 1-1. Apple Developer Program 加入 ($99/年)
+- メール: kayaharuka@hotmail.com
+- GitHub: Himanaraba
+- Apple Developer Team ID: 7482F26LUS
+- 役割: 個人開発者。部活動向け出欠管理システムを一人で開発・運用
 
-1. https://developer.apple.com/programs/ → "Enroll" → Apple ID でサインイン
-2. 個人 (Individual) で登録
-3. クレカで $99 支払い → **数時間〜2日** で承認メール
+### 作業スタイル (重要 — 必ず守ること)
 
-加入が遅延するので Mac 借りる前にやっておく方が効率良い。
-
-### 1-2. App Store Connect でアプリ枠を作成
-
-1. https://appstoreconnect.apple.com → 「マイ App」→「+」→「新規 App」
-2. 設定:
-   - プラットフォーム: **iOS**
-   - 名前: `出欠管理`
-   - 言語: 日本語
-   - Bundle ID: `jp.zenshin9498.attendance` (Xcode 初回 archive 時に自動登録されるので **後から** でもOK)
-   - SKU: 任意 (例 `attendance-2026`)
+- **言語**: ユーザーとのやり取り・コミットメッセージは **日本語**。コード・API 名は英語
+- **自律動作**: 手順書を渡すのではなく自分で実行する。"You could try" ではなく "Implemented and validated"
+- **確認不要なケース**: 安全な仮定が立つなら確認せず進める。仮定は結果報告に明記
+- **自走**: 失敗したら原因調査 → 修正 → 再検証まで完了する。「問題を見つけた」で止まらない
+- **出力形式**: 過剰な前置き・再確認・"AI ぽい" 締めは不要。報告は「何を変更 / 検証結果 / 残ブロッカー / 人間に必要なアクション」の構造で簡潔に
+- **人間に聞いてよいのは**: シークレット提供、破壊的操作の承認、本番デプロイの最終承認
+- **git コミットプレフィクス**: `feat:` `fix:` `refactor:` `perf:` `docs:` `test:` `chore:`
+- **git 安全ルール**: 新ファイル作成後は `git status` で untracked 確認してから commit。シークレットは絶対にコミットしない
 
 ---
 
-## 2. Mac 上のワンタイム設定
+## プロジェクト全体像
+
+部活動向け出欠管理システム。2つのリポジトリで構成。両方 public / Apache 2.0。
+
+### バックエンド (運用中・Mac 作業不要)
+- リポジトリ: `github.com/Himanaraba/attendance-system`
+- スタック: Flask 3 / SQLAlchemy / Flask-JWT-Extended / SQLite
+- 本番: https://zenshin9498.duckdns.org (Vultr VPS + Coolify + Traefik + Let's Encrypt)
+- デプロイ: `git push` → Coolify 自動ビルド
+
+### モバイル (このリポジトリ)
+- リポジトリ: `github.com/Himanaraba/attendance-app`
+- スタック: Flutter 3 / Provider / Dio / liquid_glass_widgets (iOS 26 Liquid Glass デザイン)
+- Android 版: 運用中。`release-apk.ps1` (Windows) で APK ビルド → GitHub Releases → OTA 自動更新
+- **iOS 版: これから初回ビルド & TestFlight 配布する ← 今回の作業**
+
+### API 接続先
+- 本番: `https://zenshin9498.duckdns.org` (`lib/config/api_config.dart` に設定済み)
+- HTTPS なので iOS の ATS (App Transport Security) はデフォルトで問題なし
+
+---
+
+## 完了済みの準備 (Windows 側で実施済み)
+
+以下は **すべて完了している**。Mac 側での再設定は不要。
+
+- [x] **Apple Developer Program 加入** ($99/年、承認済み)
+- [x] **Bundle ID 登録**: `jp.zenshin9498.attendance` (Certificates, Identifiers & Profiles で登録済み)
+- [x] **App Store Connect アプリ枠**: `ZENSHIN-Attendance` で作成済み
+- [x] **App Store Connect API キー**: `.p8` ファイル発行済み (ユーザーの手元にある)
+- [x] **Bundle ID をコードに反映**: `ios/Runner.xcodeproj/project.pbxproj` で `jp.zenshin9498.attendance` に変更済み
+- [x] **アプリ表示名**: `ios/Runner/Info.plist` の `CFBundleDisplayName` を「出欠管理」に変更済み
+- [x] **OTA アップデート無効化**: `lib/services/update_service.dart` で `UpdateService.isSupported` が `Platform.isAndroid` を返す。iOS では `check()` が常に null を返し、アップデート画面は出ない
+- [x] **プロフィール画面分岐**: `lib/screens/profile_screen.dart` の「アップデートを確認」ボタンが `Platform.isAndroid` で囲まれており、iOS では非表示
+- [x] **`scripts/release-ipa.sh`**: CLI 自動化スクリプト雛形を配置済み
+
+---
+
+## Mac でやるべき作業
+
+### Phase 1: 環境構築 (ワンタイム)
 
 ```bash
-# Xcode (Mac App Store から、約 8GB)
+# 1. Xcode コマンドラインツール
 sudo xcode-select --install
 sudo xcodebuild -license accept
 
-# CocoaPods
+# 2. CocoaPods
 sudo gem install cocoapods
 
-# Flutter
+# 3. Flutter (Homebrew 経由)
 brew install --cask flutter
-flutter doctor   # 全部 ✓ にする (iOS toolchain, Xcode, CocoaPods 必須)
+flutter doctor
+# → iOS toolchain, Xcode, CocoaPods が全部 ✓ になること
 ```
 
-Xcode を起動 → **Settings → Accounts** → 「+」で自分の Apple ID を追加 → "Manage Certificates" で iOS 開発証明書を作成。
+### Phase 2: Xcode に Apple ID を追加
 
----
+1. Xcode 起動 → **Settings (⌘,)** → **Accounts** タブ
+2. 左下「+」→「Apple ID」→ 賀屋の Apple ID でサインイン
+3. 追加されたら「Manage Certificates...」→「+」→「Apple Development」で開発証明書を発行
 
-## 3. プロジェクト取得 & 初回ビルド
+> 友達の Mac に友達の Apple ID がサインイン済みでも問題ない。Xcode は複数 Apple ID を並行管理できる。
+
+### Phase 3: プロジェクト取得 & ビルド
 
 ```bash
 git clone https://github.com/Himanaraba/attendance-app.git
 cd attendance-app
-
 flutter pub get
 cd ios && pod install && cd ..
 ```
 
-### 実機テスト (iPhone をケーブル接続)
+### Phase 4: 実機テスト (任意だが推奨)
 
-iPhone 側の **設定 → 一般 → VPN とデバイス管理** で開発者を信頼。
+iPhone をケーブル接続。iPhone 側で「このコンピュータを信頼」を許可。
 
 ```bash
 flutter devices         # iPhone が表示されることを確認
-flutter run --release   # 実機にインストール (1〜2分)
+flutter run --release   # 実機にインストール
 ```
 
----
+iPhone の **設定 → 一般 → VPN とデバイス管理** で開発者プロファイルを信頼する必要がある場合あり。
 
-## 4. TestFlight 配布 (Xcode GUI)
+### Phase 5: TestFlight 配布 (本命)
 
-1. `ios/Runner.xcworkspace` を **Xcode で開く** (※ `.xcodeproj` ではなく `.xcworkspace`)
-2. 上部のターゲット選択を `Any iOS Device (arm64)` にする
-3. `Runner` を選択 → `Signing & Capabilities` タブ → Team を Apple Developer の自分のチームに
-4. メニュー: **Product → Archive** (3〜5分)
-5. 完了後 `Organizer` ウィンドウが開く → 該当 archive を選択 → **Distribute App** → **App Store Connect** → **Upload**
-6. App Store Connect ([appstoreconnect.apple.com](https://appstoreconnect.apple.com)) の **TestFlight** タブ:
-   - ビルド処理: 約 **15〜30分**
-   - 内部テスターを追加 (最大 100人, Apple ID 招待)
-   - 外部テスター配布の場合は審査必要 (約 24時間)
+1. `ios/Runner.xcworkspace` を **Xcode で開く** (`.xcodeproj` ではなく `.xcworkspace`)
+2. 上部ターゲット → `Any iOS Device (arm64)`
+3. Runner ターゲット → **Signing & Capabilities** → Team を賀屋の Developer Team (`7482F26LUS`) に設定
+4. **「Automatically manage signing」** を ON
+5. メニュー: **Product → Archive** (3〜5分)
+6. Organizer ウィンドウ → archive 選択 → **Distribute App** → **App Store Connect** → **Upload**
+7. App Store Connect ([appstoreconnect.apple.com](https://appstoreconnect.apple.com)) → **TestFlight** タブ:
+   - ビルド処理: 約 15〜30分
+   - 内部テスターを追加 (Apple ID 招待)
 
-テスターは iPhone に **TestFlight アプリ** を入れて招待リンクから入る。
+テスターは iPhone に **TestFlight** アプリを入れて招待リンクから参加。
 
----
+### Phase 6: CLI 自動化 (オプション)
 
-## 5. CLI 配布 (オプション・自動化版)
-
-CocoaPods / archive / upload を一発で回すスクリプト。App Store Connect API キーが必要 (App Store Connect → ユーザとアクセス → キー → 「+」)。
-
-環境変数を `.env.ios` に置く (gitignore 対象):
-```bash
-export APP_STORE_CONNECT_KEY_ID="ABCD1234EF"
-export APP_STORE_CONNECT_ISSUER_ID="69a6de70-..."
-export APP_STORE_CONNECT_KEY_PATH="$HOME/.appstoreconnect/AuthKey_ABCD1234EF.p8"
-```
+ユーザーが `.p8` ファイルを持っている。以下の環境変数を設定して `release-ipa.sh` で一発配布:
 
 ```bash
-chmod +x scripts/release-ipa.sh   # 初回のみ
-source .env.ios
+export APP_STORE_CONNECT_KEY_ID="<Key ID>"
+export APP_STORE_CONNECT_ISSUER_ID="<Issuer ID>"
+export APP_STORE_CONNECT_KEY_PATH="$HOME/.appstoreconnect/<ファイル名>.p8"
+
+chmod +x scripts/release-ipa.sh
 ./scripts/release-ipa.sh 1.6.0 "iOS版初回リリース"
 ```
 
----
+Key ID / Issuer ID / .p8 ファイルは **ユーザーに聞くこと** (秘密情報なのでこのファイルには書かない)。
 
-## 6. バージョン管理の方針
+### Phase 7: 後片付け (Mac を返す前)
 
-`pubspec.yaml` の `version: 1.5.7+15` を共通バージョン番号として使う:
-- `1.5.7` = `CFBundleShortVersionString` / Android `versionName`
-- `+15` = `CFBundleVersion` / Android `versionCode`
+友達の Mac に賀屋の情報を残さないように:
 
-iOS は TestFlight 配布のたびに `+N` を上げないとアップロード拒否される。
-
-Android と iOS を **同じ** バージョンで揃えたい場合の理想フロー:
-```
-1. release-apk.ps1 -Version 1.6.0 -Notes "..."    (Windows)
-2. git pull                                        (Mac)
-3. ./scripts/release-ipa.sh 1.6.0 "..."           (Mac)
-```
+1. Xcode → Settings → Accounts → 賀屋の Apple ID を選択 → 左下「-」で削除
+2. **Keychain Access** アプリ → 「Apple Development」「Apple Distribution」で検索 → 賀屋名義の秘密鍵を削除
+3. `~/Library/MobileDevice/Provisioning Profiles/` の中身を削除
+4. `attendance-app/` フォルダを削除
+5. 環境変数に `.p8` パスを書いていた場合は `.env.ios` を削除
 
 ---
 
-## 7. トラブルシューティング
+## 技術的な注意点
+
+### iOS で無効化されている機能
+- **OTA アップデート** (`UpdateService.isSupported == false`): iOS では APK 相当の自動 DL/インストールが OS の制約で不可能。TestFlight が唯一の配信チャネル
+- **「アップデートを確認」ボタン** (`Platform.isAndroid` で囲まれている): iOS では非表示
+- **システムナビゲーションバー非表示** (`SystemChrome.setEnabledSystemUIMode(immersiveSticky)`): Android 専用の設定だが、iOS には元々ナビバーが無いので影響なし
+
+### Liquid Glass (liquid_glass_widgets v0.10.9)
+- iOS 26 デザイン言語ベースなので iOS の方がむしろ映える
+- `GlassBottomBar` で画面下部のタブバー、`GradientBackground` で背景グラデーションを表示
+- `GlassAppBar` は使っていない (上部が白く曇る問題で通常の透明 AppBar に戻した経緯あり)
+- **ビルドエラーが出た場合**: `ios/Podfile` の `platform :ios` を `'14.0'` 以上に上げる
+
+### flutter_secure_storage
+- iOS では Keychain に JWT トークンを保存
+- Keychain Sharing Capability は不要 (アプリ内のみ使用)
+
+### バージョン番号
+- `pubspec.yaml` の `version: X.Y.Z+N` が iOS (`CFBundleShortVersionString` + `CFBundleVersion`) にも反映
+- TestFlight アップロードのたびに `+N` を上げる必要がある (同一番号での再アップロードは拒否される)
+- 現在の最新バージョン: pubspec.yaml を `grep '^version:'` して確認
+
+### i18n (国際化)
+- `lib/services/i18n.dart` に ja/en の翻訳テーブル
+- `LanguageProvider` で言語切替。デフォルト日本語
+- アップデート画面含む全 UI が言語設定に追従する
+
+---
+
+## トラブルシューティング
 
 | 症状 | 対処 |
 |---|---|
-| Xcode で `No team found` | Apple Developer 加入完了後、数時間待つ。または Xcode → Settings → Accounts でログインし直す |
-| `pod install` がエラー | `cd ios && rm -rf Pods Podfile.lock && pod install --repo-update` |
-| `code signing failed` | Xcode → Runner ターゲット → Signing & Capabilities → Team を選択し、"Automatically manage signing" を ON |
-| TestFlight に上がらない | App Store Connect の **App Store** タブの「ビルド」セクション。エラーメッセージはメールでも届く (Apple ID 宛) |
-| `liquid_glass_widgets` がビルドエラー | iOS 12 未満をサポートしている場合は ios/Podfile の `platform :ios, '12.0'` を `'14.0'` などに上げる |
-| 起動時に「インターネット接続なし」と出る | Info.plist の ATS デフォルトは HTTPS のみ。本番 URL (DuckDNS + LE) は問題なし。開発で http://localhost を叩く時は ATS 例外追加が必要 |
+| `No team found` | Apple Developer 承認済みなら Xcode → Settings → Accounts でログインし直す |
+| `pod install` エラー | `cd ios && rm -rf Pods Podfile.lock && pod install --repo-update` |
+| `code signing failed` | Xcode → Runner → Signing & Capabilities → Team 選択 + "Automatically manage signing" ON |
+| TestFlight にビルドが出ない | 処理に 15〜30分。エラーは Apple ID 宛メールで通知される |
+| `liquid_glass_widgets` ビルドエラー | `ios/Podfile` の iOS version を `'14.0'` 以上に |
+| 「インターネット接続なし」 | ATS デフォルト = HTTPS のみ。本番 URL (DuckDNS + LE) は問題なし。開発で http://localhost を叩くなら Info.plist に ATS 例外追加 |
+| `getExternalStorageDirectory` エラー | iOS では null 返却。OTA コードパスは `isSupported` ガードで到達しないはずだが、もし踏んでたら `UpdateService` の分岐を確認 |
+| Archive 後の Upload で「Invalid Bundle」 | Bundle ID が `jp.zenshin9498.attendance` と App Store Connect 登録が一致しているか確認。project.pbxproj を grep |
 
 ---
 
-## 8. 既知の差異 (Android vs iOS)
+## Android vs iOS の差異一覧
 
 | 機能 | Android | iOS |
 |---|---|---|
-| OTA アップデート | ✅ 自動 (`release-apk.ps1`) | ❌ 不可。TestFlight で受信 |
-| プロフィールの「アップデートを確認」ボタン | 表示 | 非表示 (`Platform.isAndroid` 分岐) |
-| システムナビバー非表示 | ✅ (`immersiveSticky`) | iOS は元々ナビバー無し |
+| OTA アップデート | ✅ 自動 (`release-apk.ps1`, GitHub Releases) | ❌ 不可。TestFlight で受信 |
+| 「アップデートを確認」ボタン | 表示 | 非表示 |
+| システムナビバー非表示 | ✅ `immersiveSticky` | iOS にナビバー無し |
 | Liquid Glass | 動作 | 動作 (iOS の方が映える) |
-| 通知 | 未実装 | 未実装 |
+| プッシュ通知 | 未実装 | 未実装 |
+| 署名 | Keystore (自動) | Apple Developer Certificate (Xcode 自動管理) |
+| 配布 | GitHub Releases APK | TestFlight |
+| リリーススクリプト | `attendance-tools/release-apk.ps1` (Windows) | `scripts/release-ipa.sh` (Mac) |
+
+---
+
+## この文書に書いていない秘密情報 (ユーザーに聞くこと)
+
+以下はリポジトリに含めてはいけない。必要になったらユーザーに直接聞くこと:
+
+- App Store Connect API Key ID
+- App Store Connect Issuer ID
+- `.p8` ファイルの内容・パス
+- Apple ID のパスワード
+- Discord Webhook URL / Bot Token (バックエンド側、iOS 作業には不要)
