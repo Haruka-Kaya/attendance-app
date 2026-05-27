@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -138,16 +137,14 @@ class ProfileScreen extends StatelessWidget {
                   },
                 ),
               ),
-              // アップデート確認 (Android のみ。iOS は TestFlight/App Store で更新)
-              if (Platform.isAndroid) ...[
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.system_update_alt),
-                  title: Text(lang.lang == 'en' ? 'Check for update' : 'アップデートを確認'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _checkUpdate(context, lang.lang),
-                ),
-              ],
+              const Divider(height: 1),
+              // アップデート確認 (Android: OTA / iOS: TestFlight 誘導)
+              ListTile(
+                leading: const Icon(Icons.system_update_alt),
+                title: Text(lang.lang == 'en' ? 'Check for update' : 'アップデートを確認'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _checkUpdate(context, lang.lang),
+              ),
               const Divider(height: 1),
               // パスワード変更
               ListTile(

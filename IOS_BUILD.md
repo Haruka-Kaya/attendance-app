@@ -166,9 +166,9 @@ App Store Connect ([appstoreconnect.apple.com](https://appstoreconnect.apple.com
 
 ## 技術的な注意点
 
-### iOS で無効化されている機能
-- **OTA アップデート** (`UpdateService.isSupported == false`): iOS では APK 相当の自動 DL/インストールが OS の制約で不可能。TestFlight が唯一の配信チャネル
-- **「アップデートを確認」ボタン** (`Platform.isAndroid` で囲まれている): iOS では非表示
+### iOS での動作が異なる機能
+- **アップデート確認**: バージョンチェックは iOS でも実行する。新バージョン検知時に `UpdateScreen` を表示するが、ダウンロードボタンの代わりに **「TestFlight で更新」** ボタンを表示 (`url_launcher` で `itms-beta://` スキームを起動)。`UpdateService.canDirectInstall` が false の場合に分岐
+- **プロフィールの「アップデートを確認」ボタン**: iOS でも表示。チェック結果に応じて UpdateScreen (TestFlight 誘導) またはスナックバー「最新バージョンです」
 - **システムナビゲーションバー非表示** (`SystemChrome.setEnabledSystemUIMode(immersiveSticky)`): Android 専用の設定だが、iOS には元々ナビバーが無いので影響なし
 
 ### Liquid Glass (liquid_glass_widgets v0.10.9)
@@ -212,8 +212,8 @@ App Store Connect ([appstoreconnect.apple.com](https://appstoreconnect.apple.com
 
 | 機能 | Android | iOS |
 |---|---|---|
-| OTA アップデート | ✅ 自動 (`release-apk.ps1`, GitHub Releases) | ❌ 不可。TestFlight で受信 |
-| 「アップデートを確認」ボタン | 表示 | 非表示 |
+| OTA アップデート | ✅ APK 自動 DL/インストール (`release-apk.ps1`) | 「TestFlight で更新」ボタンで TestFlight アプリに誘導 |
+| 「アップデートを確認」ボタン | 表示 (OTA) | 表示 (TestFlight 誘導) |
 | システムナビバー非表示 | ✅ `immersiveSticky` | iOS にナビバー無し |
 | Liquid Glass | 動作 | 動作 (iOS の方が映える) |
 | プッシュ通知 | 未実装 | 未実装 |

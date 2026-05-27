@@ -89,6 +89,8 @@ const Map<String, Map<String, String>> kTranslations = {
     'update.installer_open':  'インストーラが起動しました',
     'update.forced_msg':      'このバージョンはサポート対象外です。続行するには更新が必要です。',
     'update.error':           'エラー',
+    'update.open_testflight': 'TestFlight で更新',
+    'update.ios_msg':         'TestFlight アプリから更新できます',
   },
   'en': {
     'app_title':           'Attendance',
@@ -167,5 +169,7 @@ const Map<String, Map<String, String>> kTranslations = {
     'update.installer_open':  'Installer opened',
     'update.forced_msg':      'This version is no longer supported. You must update to continue.',
     'update.error':           'Error',
+    'update.open_testflight': 'Open TestFlight',
+    'update.ios_msg':         'Update via the TestFlight app',
   },
 };

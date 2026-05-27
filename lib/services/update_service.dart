@@ -32,13 +32,11 @@ class UpdateProgress {
 }
 
 class UpdateService {
-  /// iOS は App Store / TestFlight が公式の配信チャネル。
-  /// 任意の URL から ipa を落として自前で署名・インストールする手段は
-  /// OS の制約で存在しないので、アプリ内 OTA は Android 限定にする。
-  static bool get isSupported => Platform.isAndroid;
+  /// APK ダウンロード→インストールが可能か (Android のみ)。
+  /// iOS は TestFlight / App Store 経由なので直接インストール不可。
+  static bool get canDirectInstall => Platform.isAndroid;
 
   static Future<UpdateInfo?> check() async {
-    if (!isSupported) return null;
     try {
       final dio = Dio(BaseOptions(
         connectTimeout: const Duration(seconds: 5),

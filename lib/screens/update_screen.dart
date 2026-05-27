@@ -1,11 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/language_provider.dart';
 import '../services/update_service.dart';
 
 class UpdateScreen extends StatefulWidget {
   final UpdateInfo info;
-  final VoidCallback? onSkipped; // 任意更新でユーザがスキップした時
+  final VoidCallback? onSkipped;
   const UpdateScreen({super.key, required this.info, this.onSkipped});
 
   @override
@@ -14,12 +16,13 @@ class UpdateScreen extends StatefulWidget {
 
 class _UpdateScreenState extends State<UpdateScreen> {
   double _progress = 0;
-  String _statusKey = '';    // 翻訳キー (空文字なら表示なし)
-  String _errorRaw  = '';    // 例外メッセージ (翻訳しない)
+  String _statusKey = '';
+  String _errorRaw  = '';
   bool _running = false;
   bool _failed = false;
 
   void _startUpdate() {
+    if (!UpdateService.canDirectInstall) return;
     setState(() {
       _running = true;
       _failed  = false;
@@ -57,6 +60,13 @@ class _UpdateScreenState extends State<UpdateScreen> {
     });
   }
 
+  Future<void> _openTestFlight() async {
+    final uri = Uri.parse('itms-beta://');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
   String _statusText(LanguageProvider lang) {
     if (_statusKey.isEmpty) return '';
     if (_statusKey == 'update.error') {
@@ -73,6 +83,8 @@ class _UpdateScreenState extends State<UpdateScreen> {
   Widget build(BuildContext context) {
     final info = widget.info;
     final lang = context.watch<LanguageProvider>();
+    final isIOS = Platform.isIOS;
+
     return PopScope(
       canPop: false,
       child: Scaffold(
@@ -133,7 +145,17 @@ class _UpdateScreenState extends State<UpdateScreen> {
                       ),
                       const SizedBox(height: 16),
                     ],
-                    if (_running || _failed) ...[
+                    // iOS: TestFlight 誘導メッセージ
+                    if (isIOS) ...[
+                      Text(
+                        lang.t('update.ios_msg'),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    // Android: ダウンロード進捗
+                    if (!isIOS && (_running || _failed)) ...[
                       LinearProgressIndicator(
                         value: _running && !_failed ? _progress / 100 : null,
                         minHeight: 6,
@@ -144,13 +166,20 @@ class _UpdateScreenState extends State<UpdateScreen> {
                           style: const TextStyle(fontSize: 12)),
                       const SizedBox(height: 16),
                     ],
+                    // メインボタン: iOS → TestFlight を開く / Android → ダウンロード
                     SizedBox(
                       height: 48,
-                      child: FilledButton.icon(
-                        icon: const Icon(Icons.download),
-                        label: Text(_failed ? lang.t('update.retry') : lang.t('update.now')),
-                        onPressed: (_running && !_failed) ? null : _startUpdate,
-                      ),
+                      child: isIOS
+                          ? FilledButton.icon(
+                              icon: const Icon(Icons.open_in_new),
+                              label: Text(lang.t('update.open_testflight')),
+                              onPressed: _openTestFlight,
+                            )
+                          : FilledButton.icon(
+                              icon: const Icon(Icons.download),
+                              label: Text(_failed ? lang.t('update.retry') : lang.t('update.now')),
+                              onPressed: (_running && !_failed) ? null : _startUpdate,
+                            ),
                     ),
                     if (!info.isForced && !_running) ...[
                       const SizedBox(height: 8),
