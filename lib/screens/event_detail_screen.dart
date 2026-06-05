@@ -166,8 +166,84 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   : const Text('保存'),
             ),
           ),
+          const SizedBox(height: 24),
+
+          // 出席予定者リスト
+          if (ev.attendees.isNotEmpty) ...[
+            Row(children: [
+              Text('参加状況',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+              const SizedBox(width: 8),
+              _SummaryBadge('出席', ev.summary.present, Colors.green),
+              const SizedBox(width: 4),
+              _SummaryBadge('部分', ev.summary.partial, Colors.orange),
+              const SizedBox(width: 4),
+              _SummaryBadge('欠席', ev.summary.absent, Colors.red),
+            ]),
+            const SizedBox(height: 8),
+            Card(
+              margin: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  for (final a in [
+                    ...ev.attendees.where((a) => a.status == 'present'),
+                    ...ev.attendees.where((a) => a.status == 'partial'),
+                    ...ev.attendees.where((a) => a.status == 'absent'),
+                  ])
+                    ListTile(
+                      dense: true,
+                      leading: CircleAvatar(
+                        radius: 12,
+                        backgroundColor: switch (a.status) {
+                          'present' => Colors.green,
+                          'partial' => Colors.orange,
+                          _         => Colors.red.shade300,
+                        },
+                        child: Icon(
+                          switch (a.status) {
+                            'present' => Icons.check,
+                            'partial' => Icons.schedule,
+                            _         => Icons.close,
+                          },
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                      ),
+                      title: Text(a.name, style: const TextStyle(fontSize: 14)),
+                      subtitle: a.comment != null && a.comment!.isNotEmpty
+                          ? Text(a.comment!, style: const TextStyle(fontSize: 11))
+                          : null,
+                    ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
+    );
+  }
+}
+
+class _SummaryBadge extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color color;
+  const _SummaryBadge(this.label, this.count, this.color);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text('$label $count',
+          style: TextStyle(
+              fontSize: 11, fontWeight: FontWeight.w600, color: color)),
     );
   }
 }

@@ -40,9 +40,7 @@ class _EventCardState extends State<EventCard> {
     if (!mounted) return;
     setState(() => _saving = false);
     if (err == null) {
-      // 元のEventProviderのデータも更新 (画面再描画用)
       widget.event.myStatus = status;
-      // 軽くフィードバック
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('${widget.event.title}: ${_label(status)}'),
@@ -50,7 +48,6 @@ class _EventCardState extends State<EventCard> {
           behavior: SnackBarBehavior.floating,
         ),
       );
-      // EventProvider 再取得
       context.read<EventProvider>().loadUpcoming();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -107,6 +104,16 @@ class _EventCardState extends State<EventCard> {
                                 fontSize: 11,
                                 color: theme.colorScheme.onSurfaceVariant)),
                       ],
+                      if (ev.summary.total > 0) ...[
+                        const SizedBox(height: 6),
+                        Row(children: [
+                          _MiniCount(Icons.check, Colors.green, ev.summary.present),
+                          const SizedBox(width: 6),
+                          _MiniCount(Icons.schedule, Colors.orange, ev.summary.partial),
+                          const SizedBox(width: 6),
+                          _MiniCount(Icons.close, Colors.red.shade300, ev.summary.absent),
+                        ]),
+                      ],
                     ],
                   ),
                 ),
@@ -125,5 +132,23 @@ class _EventCardState extends State<EventCard> {
         ),
       ),
     );
+  }
+}
+
+class _MiniCount extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final int count;
+  const _MiniCount(this.icon, this.color, this.count);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: 11, color: color),
+      const SizedBox(width: 2),
+      Text('$count',
+          style: TextStyle(
+              fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+    ]);
   }
 }
