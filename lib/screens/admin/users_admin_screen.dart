@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../services/api_service.dart';
 import '../../widgets/empty_state.dart';
 
@@ -318,7 +319,6 @@ class _UserFormState extends State<_UserForm> {
   final _formKey   = GlobalKey<FormState>();
   final _nameCtl   = TextEditingController();
   final _emailCtl  = TextEditingController();
-  final _passCtl   = TextEditingController();
   String _role     = 'user';
   String? _grade; // null = 未設定
   String _class    = '';
@@ -346,7 +346,6 @@ class _UserFormState extends State<_UserForm> {
   void dispose() {
     _nameCtl.dispose();
     _emailCtl.dispose();
-    _passCtl.dispose();
     super.dispose();
   }
 
@@ -361,17 +360,20 @@ class _UserFormState extends State<_UserForm> {
       'user_class': _class,
       'positions':  _positions.toList(),
     };
-    if (widget.user == null && _passCtl.text.isNotEmpty) {
-      data['password'] = _passCtl.text;
-    }
     try {
       if (widget.user == null) {
-        await ApiService.createUser(data);
+        final tempPw = await ApiService.createUser(data);
+        setState(() => _saving = false);
+        if (!mounted) return;
+        Navigator.pop(context);
+        if (tempPw != null) {
+          await _showTempPasswordDialog(context, _nameCtl.text.trim(), tempPw);
+        }
       } else {
         await ApiService.updateUser(widget.user!['id'] as int, data);
+        setState(() => _saving = false);
+        if (mounted) Navigator.pop(context);
       }
-      setState(() => _saving = false);
-      if (mounted) Navigator.pop(context);
     } catch (e) {
       setState(() => _saving = false);
       if (mounted) {
@@ -379,6 +381,62 @@ class _UserFormState extends State<_UserForm> {
             SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
       }
     }
+  }
+
+  Future<void> _showTempPasswordDialog(BuildContext ctx, String name, String pw) {
+    return showDialog<void>(
+      context: ctx,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text('仮パスワードを発行しました'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('$name さんに以下の仮パスワードを伝えてください。'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(ctx).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: SelectableText(
+                pw,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '初回ログイン時に本人がパスワードと profile を設定します。\nこの画面を閉じると仮パスワードは再表示できません。',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton.icon(
+            icon: const Icon(Icons.copy),
+            label: const Text('コピー'),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: pw));
+              ScaffoldMessenger.of(ctx).showSnackBar(
+                const SnackBar(content: Text('コピーしました'),
+                    behavior: SnackBarBehavior.floating,
+                    duration: Duration(seconds: 1)),
+              );
+            },
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -414,18 +472,24 @@ class _UserFormState extends State<_UserForm> {
                     (v == null || v.isEmpty) ? '入力してください' : null,
               ),
               const SizedBox(height: 8),
-              if (widget.user == null)
-                TextFormField(
-                  controller: _passCtl,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                      labelText: 'パスワード', border: OutlineInputBorder(),
-                      isDense: true),
-                  validator: (v) =>
-                      widget.user == null && (v == null || v.isEmpty)
-                          ? '入力してください' : null,
+              if (widget.user == null) ...[
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(children: [
+                    const Icon(Icons.info_outline, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(
+                      '仮パスワードは作成後に自動発行されます。\n本人が初回ログイン時に正式なパスワードを設定します。',
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                    )),
+                  ]),
                 ),
-              if (widget.user == null) const SizedBox(height: 8),
+                const SizedBox(height: 8),
+              ],
               Row(children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
