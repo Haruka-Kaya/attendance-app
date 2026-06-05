@@ -65,9 +65,12 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
     super.build(context);
     final filtered = _filtered;
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showForm(context, null),
-        child: const Icon(Icons.person_add),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 72),
+        child: FloatingActionButton(
+          onPressed: () => _showForm(context, null),
+          child: const Icon(Icons.person_add),
+        ),
       ),
       body: Column(
         children: [

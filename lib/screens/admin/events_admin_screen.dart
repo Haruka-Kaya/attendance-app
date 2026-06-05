@@ -29,9 +29,12 @@ class _EventsAdminScreenState extends State<EventsAdminScreen>
     super.build(context);
     final prov = context.watch<EventProvider>();
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showForm(context, null),
-        child: const Icon(Icons.add),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 72),
+        child: FloatingActionButton(
+          onPressed: () => _showForm(context, null),
+          child: const Icon(Icons.add),
+        ),
       ),
       body: prov.loading
           ? const Center(child: CircularProgressIndicator())

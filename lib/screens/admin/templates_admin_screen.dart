@@ -43,22 +43,25 @@ class _TemplatesAdminScreenState extends State<TemplatesAdminScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton.small(
-            heroTag: 'generate',
-            tooltip: '活動生成',
-            onPressed: () => _showGenerateDialog(context),
-            child: const Icon(Icons.auto_awesome),
-          ),
-          const SizedBox(height: 8),
-          FloatingActionButton(
-            heroTag: 'add',
-            onPressed: () => _showForm(context, null),
-            child: const Icon(Icons.add),
-          ),
-        ],
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 72),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FloatingActionButton.small(
+              heroTag: 'generate',
+              tooltip: '活動生成',
+              onPressed: () => _showGenerateDialog(context),
+              child: const Icon(Icons.auto_awesome),
+            ),
+            const SizedBox(height: 8),
+            FloatingActionButton(
+              heroTag: 'add',
+              onPressed: () => _showForm(context, null),
+              child: const Icon(Icons.add),
+            ),
+          ],
+        ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
