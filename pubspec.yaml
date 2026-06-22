@@ -43,7 +43,7 @@ dependencies:
   url_launcher: ^6.2.5
 
   # Liquid Glass UI (iOS 26 デザイン言語)
-  liquid_glass_widgets: ^0.10.9
+  liquid_glass_widgets: ^0.17.1
 
 dev_dependencies:
   flutter_test:
