@@ -11,7 +11,7 @@ dependencies:
     sdk: flutter
 
   # HTTP & API
-  dio: ^5.4.3
+  dio: ^5.10.0
 
   # フォント
   google_fonts: ^6.2.1
