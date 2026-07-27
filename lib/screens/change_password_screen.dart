@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/language_provider.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   final bool forced; // true = 初回強制変更
@@ -41,7 +42,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           SnackBar(content: Text(err), backgroundColor: Colors.red));
     } else {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('パスワードを変更しました')));
+          .showSnackBar(SnackBar(content: Text(context.read<LanguageProvider>().t('auth.password_changed'))));
       if (widget.forced) {
         // 強制変更後はそのまま（_AppGate が自動で画面遷移する）
       } else {
@@ -52,9 +53,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.forced ? '初回パスワード変更' : 'パスワード変更'),
+        title: Text(widget.forced ? lang.t('auth.password_change_first') : lang.t('auth.password_change')),
         automaticallyImplyLeading: !widget.forced,
       ),
       body: Center(
@@ -70,7 +72,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   if (widget.forced) ...[
                     const Icon(Icons.lock_reset, size: 48, color: Colors.orange),
                     const SizedBox(height: 8),
-                    const Text('初回ログインのためパスワードを変更してください',
+                    Text(lang.t('auth.first_login_msg'),
                         textAlign: TextAlign.center),
                     const SizedBox(height: 24),
                   ],
@@ -78,7 +80,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     controller: _currentCtl,
                     obscureText: _obscureCur,
                     decoration: InputDecoration(
-                      labelText: '現在のパスワード',
+                      labelText: lang.t('auth.password_cur'),
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
                         icon: Icon(_obscureCur
@@ -89,14 +91,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       ),
                     ),
                     validator: (v) =>
-                        (v == null || v.isEmpty) ? '入力してください' : null,
+                        (v == null || v.isEmpty) ? lang.t('common.required') : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _newCtl,
                     obscureText: _obscureNew,
                     decoration: InputDecoration(
-                      labelText: '新しいパスワード',
+                      labelText: lang.t('auth.password_new'),
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
                         icon: Icon(_obscureNew
@@ -107,8 +109,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       ),
                     ),
                     validator: (v) {
-                      if (v == null || v.isEmpty) return '入力してください';
-                      if (v.length < 6) return '6文字以上入力してください';
+                      if (v == null || v.isEmpty) return lang.t('common.required');
+                      if (v.length < 6) return lang.t('auth.password_min6');
                       return null;
                     },
                   ),
@@ -116,11 +118,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   TextFormField(
                     controller: _confirmCtl,
                     obscureText: _obscureNew,
-                    decoration: const InputDecoration(
-                      labelText: '新しいパスワード（確認）',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: lang.t('auth.password_conf'),
+                      border: const OutlineInputBorder(),
                     ),
-                    validator: (v) => v != _newCtl.text ? 'パスワードが一致しません' : null,
+                    validator: (v) => v != _newCtl.text ? lang.t('auth.password_mismatch') : null,
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
@@ -132,7 +134,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                               width: 20, height: 20,
                               child: CircularProgressIndicator(
                                   strokeWidth: 2, color: Colors.white))
-                          : const Text('変更する'),
+                          : Text(lang.t('auth.change')),
                     ),
                   ),
                 ],

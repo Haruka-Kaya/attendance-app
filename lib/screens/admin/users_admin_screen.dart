@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/language_provider.dart';
 import '../../services/api_service.dart';
 import '../../widgets/empty_state.dart';
 
@@ -17,8 +19,8 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
   List<Map<String, dynamic>> _users = [];
   bool _loading = false;
   String _query = '';
-  String _filterPos = '';   // '' / tech / ops / teacher
-  String _filterRole = '';  // '' / user / manager / admin
+  String _filterPos = '';
+  String _filterRole = '';
 
   @override
   void initState() {
@@ -63,20 +65,23 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final lang = context.watch<LanguageProvider>();
     final filtered = _filtered;
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showForm(context, null),
-        child: const Icon(Icons.person_add),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 72),
+        child: FloatingActionButton(
+          onPressed: () => _showForm(context, null),
+          child: const Icon(Icons.person_add),
+        ),
       ),
       body: Column(
         children: [
-          // 検索バー + フィルタ
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
             child: TextField(
               decoration: InputDecoration(
-                hintText: '名前・メールで検索',
+                hintText: lang.t('admin.search_hint'),
                 prefixIcon: const Icon(Icons.search, size: 20),
                 isDense: true,
                 suffixIcon: _query.isEmpty
@@ -94,21 +99,21 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               children: [
-                _chip('全班', '', isPos: true),
-                _chip('技術', 'tech', isPos: true),
-                _chip('運営', 'ops', isPos: true),
-                _chip('顧問', 'teacher', isPos: true),
+                _chip(lang.t('admin.all_positions'), '', isPos: true),
+                _chip(lang.t('admin.tech'), 'tech', isPos: true),
+                _chip(lang.t('admin.ops'), 'ops', isPos: true),
+                _chip(lang.t('admin.advisor'), 'teacher', isPos: true),
                 const SizedBox(width: 12),
-                _chip('全権限', '', isPos: false),
-                _chip('一般', 'user', isPos: false),
-                _chip('管理者', 'manager', isPos: false),
-                _chip('最高権限', 'admin', isPos: false),
+                _chip(lang.t('admin.all_roles'), '', isPos: false),
+                _chip(lang.t('admin.role_user'), 'user', isPos: false),
+                _chip(lang.t('admin.role_manager'), 'manager', isPos: false),
+                _chip(lang.t('admin.role_admin'), 'admin', isPos: false),
               ],
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Text('${filtered.length} 件',
+            child: Text('${filtered.length} ${lang.t('admin.n_results')}',
                 style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
           ),
           Expanded(
@@ -117,10 +122,10 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
                 : RefreshIndicator(
                     onRefresh: _load,
                     child: filtered.isEmpty
-                        ? const EmptyState(
+                        ? EmptyState(
                             icon: Icons.search_off,
-                            title: '該当するユーザーがいません',
-                            message: '検索条件を変えてみてください',
+                            title: lang.t('admin.no_matching_users'),
+                            message: lang.t('admin.no_matching_msg'),
                           )
                         : ListView.builder(
                             padding: const EdgeInsets.only(bottom: 80),
@@ -130,9 +135,9 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
                         final role = u['role'] ?? 'user';
                         final positions = List<String>.from(u['positions'] ?? []);
                         final posLabel = positions.map((p) => switch (p) {
-                          'tech'    => '技術班',
-                          'ops'     => '運営班',
-                          'teacher' => '顧問',
+                          'tech'    => lang.t('admin.tech_team'),
+                          'ops'     => lang.t('admin.ops_team'),
+                          'teacher' => lang.t('admin.teacher'),
                           _ => p,
                         }).join(', ');
 
@@ -156,25 +161,25 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
                               style: const TextStyle(fontSize: 11)),
                           trailing: PopupMenuButton<String>(
                             itemBuilder: (_) => [
-                              const PopupMenuItem(
+                              PopupMenuItem(
                                   value: 'edit',
                                   child: ListTile(
-                                      leading: Icon(Icons.edit),
-                                      title: Text('編集'),
+                                      leading: const Icon(Icons.edit),
+                                      title: Text(lang.t('common.edit')),
                                       dense: true)),
-                              const PopupMenuItem(
+                              PopupMenuItem(
                                   value: 'reset',
                                   child: ListTile(
-                                      leading: Icon(Icons.lock_reset),
-                                      title: Text('PW初期化'),
+                                      leading: const Icon(Icons.lock_reset),
+                                      title: Text(lang.t('admin.reset_pw')),
                                       dense: true)),
-                              const PopupMenuItem(
+                              PopupMenuItem(
                                   value: 'delete',
                                   child: ListTile(
-                                      leading: Icon(Icons.delete,
+                                      leading: const Icon(Icons.delete,
                                           color: Colors.red),
-                                      title: Text('削除',
-                                          style: TextStyle(color: Colors.red)),
+                                      title: Text(lang.t('common.delete'),
+                                          style: const TextStyle(color: Colors.red)),
                                       dense: true)),
                             ],
                             onSelected: (action) async {
@@ -228,24 +233,25 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
 
   Future<void> _resetPassword(
       BuildContext context, Map<String, dynamic> u) async {
+    final lang = context.read<LanguageProvider>();
     final ctrl = TextEditingController();
     final newPass = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('${u['name']} のパスワード初期化'),
+        title: Text('${u['name']} ${lang.t('admin.reset_pw_title')}'),
         content: TextField(
           controller: ctrl,
-          decoration: const InputDecoration(
-              labelText: '新しいパスワード', border: OutlineInputBorder()),
+          decoration: InputDecoration(
+              labelText: lang.t('auth.password_new'), border: const OutlineInputBorder()),
           obscureText: true,
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('キャンセル')),
+              child: Text(lang.t('common.cancel'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, ctrl.text),
-              child: const Text('設定')),
+              child: Text(lang.t('admin.set'))),
         ],
       ),
     );
@@ -253,7 +259,7 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
       try {
         await ApiService.resetUserPassword(u['id'] as int, newPass);
         ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('パスワードを初期化しました')));
+            .showSnackBar(SnackBar(content: Text(lang.t('admin.reset_pw_done'))));
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
@@ -263,18 +269,19 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
 
   Future<void> _deleteUser(
       BuildContext context, Map<String, dynamic> u) async {
+    final lang = context.read<LanguageProvider>();
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('ユーザー削除'),
-        content: Text('「${u['name']}」を削除しますか？'),
+        title: Text(lang.t('admin.user_delete')),
+        content: Text('「${u['name']}」${lang.t('admin.delete_ask')}'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('キャンセル')),
+              child: Text(lang.t('common.cancel'))),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text('削除',
+              child: Text(lang.t('common.delete'),
                   style: TextStyle(color: Colors.red.shade600))),
         ],
       ),
@@ -317,7 +324,7 @@ class _UserFormState extends State<_UserForm> {
   final _emailCtl  = TextEditingController();
   final _passCtl   = TextEditingController();
   String _role     = 'user';
-  String? _grade; // null = 未設定
+  String? _grade;
   String _class    = '';
 
   static const _gradeOptions = ['M1', 'M2', 'M3', 'H1', 'H2', 'H3', 'H4', 'OB'];
@@ -354,7 +361,7 @@ class _UserFormState extends State<_UserForm> {
       'name':       _nameCtl.text.trim(),
       'email':      _emailCtl.text.trim(),
       'role':       _role,
-      'grade':      _grade, // null OK
+      'grade':      _grade,
       'user_class': _class,
       'positions':  _positions.toList(),
     };
@@ -380,6 +387,7 @@ class _UserFormState extends State<_UserForm> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return Padding(
       padding: EdgeInsets.fromLTRB(
           16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
@@ -390,37 +398,37 @@ class _UserFormState extends State<_UserForm> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(widget.user == null ? 'ユーザー追加' : 'ユーザー編集',
+              Text(widget.user == null ? lang.t('admin.user_add') : lang.t('admin.user_edit'),
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _nameCtl,
-                decoration: const InputDecoration(
-                    labelText: '名前', border: OutlineInputBorder(), isDense: true),
+                decoration: InputDecoration(
+                    labelText: lang.t('admin.name'), border: const OutlineInputBorder(), isDense: true),
                 validator: (v) =>
-                    (v == null || v.isEmpty) ? '入力してください' : null,
+                    (v == null || v.isEmpty) ? lang.t('common.required') : null,
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _emailCtl,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                    labelText: 'メール', border: OutlineInputBorder(), isDense: true),
+                decoration: InputDecoration(
+                    labelText: lang.t('admin.email_label'), border: const OutlineInputBorder(), isDense: true),
                 validator: (v) =>
-                    (v == null || v.isEmpty) ? '入力してください' : null,
+                    (v == null || v.isEmpty) ? lang.t('common.required') : null,
               ),
               const SizedBox(height: 8),
               if (widget.user == null)
                 TextFormField(
                   controller: _passCtl,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                      labelText: 'パスワード', border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                      labelText: lang.t('auth.password'), border: const OutlineInputBorder(),
                       isDense: true),
                   validator: (v) =>
                       widget.user == null && (v == null || v.isEmpty)
-                          ? '入力してください' : null,
+                          ? lang.t('common.required') : null,
                 ),
               if (widget.user == null) const SizedBox(height: 8),
               Row(children: [
@@ -428,12 +436,12 @@ class _UserFormState extends State<_UserForm> {
                   child: DropdownButtonFormField<String>(
                     value: _role,
                     isDense: true,
-                    decoration: const InputDecoration(
-                        labelText: '権限', border: OutlineInputBorder(), isDense: true),
-                    items: const [
-                      DropdownMenuItem(value: 'user',    child: Text('一般')),
-                      DropdownMenuItem(value: 'manager', child: Text('管理者')),
-                      DropdownMenuItem(value: 'admin',   child: Text('最高権限')),
+                    decoration: InputDecoration(
+                        labelText: lang.t('admin.role'), border: const OutlineInputBorder(), isDense: true),
+                    items: [
+                      DropdownMenuItem(value: 'user',    child: Text(lang.t('admin.role_user'))),
+                      DropdownMenuItem(value: 'manager', child: Text(lang.t('admin.role_manager'))),
+                      DropdownMenuItem(value: 'admin',   child: Text(lang.t('admin.role_admin'))),
                     ],
                     onChanged: (v) => setState(() => _role = v!),
                   ),
@@ -443,10 +451,10 @@ class _UserFormState extends State<_UserForm> {
                   child: DropdownButtonFormField<String?>(
                     value: _grade,
                     isDense: true,
-                    decoration: const InputDecoration(
-                        labelText: '学年 (任意)', border: OutlineInputBorder(), isDense: true),
+                    decoration: InputDecoration(
+                        labelText: lang.t('admin.grade_optional'), border: const OutlineInputBorder(), isDense: true),
                     items: [
-                      const DropdownMenuItem<String?>(value: null, child: Text('未設定')),
+                      DropdownMenuItem<String?>(value: null, child: Text(lang.t('onboarding.grade_unset'))),
                       for (final g in _gradeOptions)
                         DropdownMenuItem<String?>(value: g, child: Text(g)),
                     ],
@@ -455,17 +463,17 @@ class _UserFormState extends State<_UserForm> {
                 ),
               ]),
               const SizedBox(height: 12),
-              const Text('班', style: TextStyle(fontSize: 12)),
+              Text(lang.t('admin.positions'), style: const TextStyle(fontSize: 12)),
               Wrap(
                 spacing: 8,
                 children: [
-                  for (final (val, label) in [
-                    ('tech', '技術班'),
-                    ('ops', '運営班'),
-                    ('teacher', '顧問'),
+                  for (final (val, key) in [
+                    ('tech', 'admin.tech_team'),
+                    ('ops', 'admin.ops_team'),
+                    ('teacher', 'admin.teacher'),
                   ])
                     FilterChip(
-                      label: Text(label, style: const TextStyle(fontSize: 12)),
+                      label: Text(lang.t(key), style: const TextStyle(fontSize: 12)),
                       selected: _positions.contains(val),
                       onSelected: (on) => setState(() {
                         on ? _positions.add(val) : _positions.remove(val);
@@ -481,7 +489,7 @@ class _UserFormState extends State<_UserForm> {
                         width: 18, height: 18,
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white))
-                    : const Text('保存'),
+                    : Text(lang.t('common.save')),
               ),
             ],
           ),

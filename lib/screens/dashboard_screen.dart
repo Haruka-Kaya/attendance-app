@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/event_provider.dart';
 import '../providers/attendance_provider.dart';
+import '../providers/language_provider.dart';
 import '../widgets/event_card.dart';
 import '../widgets/empty_state.dart';
 import 'event_detail_screen.dart';
@@ -38,29 +39,31 @@ class _DashboardScreenState extends State<DashboardScreen>
     final attendProv  = context.watch<AttendanceProvider>();
     final theme       = Theme.of(context);
 
+    final lang = context.watch<LanguageProvider>();
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('ホーム'),
+        title: Text(lang.t('nav.home')),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            tooltip: 'ログアウト',
+            tooltip: lang.t('auth.logout'),
             onPressed: () async {
               final ok = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  title: const Text('ログアウト'),
-                  content: const Text('ログアウトしますか？'),
+                  title: Text(lang.t('auth.logout')),
+                  content: Text(lang.t('auth.logout_confirm')),
                   actions: [
                     TextButton(
                         onPressed: () => Navigator.pop(ctx, false),
-                        child: const Text('キャンセル')),
+                        child: Text(lang.t('common.cancel'))),
                     TextButton(
                         onPressed: () => Navigator.pop(ctx, true),
-                        child: const Text('ログアウト')),
+                        child: Text(lang.t('auth.logout'))),
                   ],
                 ),
               );
@@ -115,8 +118,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('出席率',
-                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          Text(lang.t('dash.attendance_rate'),
+                              style: const TextStyle(fontWeight: FontWeight.w600)),
                           Text(
                             '${(attendProv.rate * 100).toStringAsFixed(1)}%',
                             style: TextStyle(
@@ -141,13 +144,13 @@ class _DashboardScreenState extends State<DashboardScreen>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _StatBadge('出席', attendProv.presentCount,
+                          _StatBadge(lang.t('status.present'), attendProv.presentCount,
                               Colors.green),
-                          _StatBadge('部分参加', attendProv.partialCount,
+                          _StatBadge(lang.t('status.partial'), attendProv.partialCount,
                               Colors.orange),
-                          _StatBadge('欠席', attendProv.absentCount,
+                          _StatBadge(lang.t('status.absent'), attendProv.absentCount,
                               Colors.red),
-                          _StatBadge('合計', attendProv.total,
+                          _StatBadge(lang.t('dash.total'), attendProv.total,
                               theme.colorScheme.primary),
                         ],
                       ),
@@ -172,7 +175,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                       child: Row(children: [
                         Icon(Icons.bolt, size: 16, color: theme.colorScheme.primary),
                         const SizedBox(width: 4),
-                        Text('今日の活動',
+                        Text(lang.t('dash.today_events'),
                             style: theme.textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: theme.colorScheme.primary)),
@@ -195,7 +198,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             // 直近の活動
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
-              child: Text('直近の活動',
+              child: Text(lang.t('dash.recent_events'),
                   style: theme.textTheme.titleSmall
                       ?.copyWith(fontWeight: FontWeight.bold)),
             ),
@@ -205,9 +208,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                 child: CircularProgressIndicator(),
               ))
             else if (eventProv.upcoming.isEmpty)
-              const EmptyState(
+              EmptyState(
                 icon: Icons.event_busy_outlined,
-                title: '予定されている活動はありません',
+                title: lang.t('dash.no_events'),
               )
             else
               ...eventProv.upcoming.where((e) => !e.isToday).map((e) => EventCard(

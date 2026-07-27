@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/language_provider.dart';
 import '../../services/api_service.dart';
 import '../../widgets/status_chip.dart';
 
@@ -80,13 +82,15 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
       await ApiService.bulkUpdateAttendance(items);
       setState(() => _dirty = false);
       if (mounted) {
+        final lang = context.read<LanguageProvider>();
         ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('保存しました')));
+            .showSnackBar(SnackBar(content: Text(lang.t('admin.saved'))));
       }
     } catch (e) {
       if (mounted) {
+        final lang = context.read<LanguageProvider>();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('保存失敗: $e'), backgroundColor: Colors.red));
+            content: Text('${lang.t('admin.save_failed')}: $e'), backgroundColor: Colors.red));
       }
     }
   }
@@ -107,6 +111,7 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final lang = context.watch<LanguageProvider>();
     final events = List<Map<String, dynamic>>.from(
         _data?['events'] as List? ?? []);
     final users  = List<Map<String, dynamic>>.from(
@@ -142,7 +147,7 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
                 child: FilledButton.icon(
                   onPressed: _save,
                   icon: const Icon(Icons.save, size: 16),
-                  label: const Text('変更を保存'),
+                  label: Text(lang.t('admin.save_changes')),
                 ),
               ),
             ),
@@ -152,9 +157,9 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : events.isEmpty
-                    ? const Center(child: Text('この日の活動はありません'))
+                    ? Center(child: Text(lang.t('admin.no_events_day')))
                     : users.isEmpty
-                        ? const Center(child: Text('ユーザーがいません'))
+                        ? Center(child: Text(lang.t('admin.no_users')))
                         : _buildTable(users, events),
           ),
         ],
@@ -165,6 +170,7 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
   Widget _buildTable(
       List<Map<String, dynamic>> users,
       List<Map<String, dynamic>> events) {
+    final lang = context.read<LanguageProvider>();
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SingleChildScrollView(
@@ -173,7 +179,7 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
           headingRowColor: WidgetStateProperty.all(
               Theme.of(context).colorScheme.primaryContainer),
           columns: [
-            const DataColumn(label: Text('名前', style: TextStyle(fontSize: 12))),
+            DataColumn(label: Text(lang.t('admin.name'), style: const TextStyle(fontSize: 12))),
             for (final ev in events)
               DataColumn(
                 label: SizedBox(
@@ -221,14 +227,15 @@ class _StatusDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return DropdownButtonHideUnderline(
       child: DropdownButton<String>(
         value: value,
         isDense: true,
-        items: const [
-          DropdownMenuItem(value: 'present', child: Text('出席', style: TextStyle(fontSize: 11, color: Colors.green))),
-          DropdownMenuItem(value: 'partial', child: Text('部分', style: TextStyle(fontSize: 11, color: Colors.orange))),
-          DropdownMenuItem(value: 'absent',  child: Text('欠席', style: TextStyle(fontSize: 11, color: Colors.red))),
+        items: [
+          DropdownMenuItem(value: 'present', child: Text(lang.t('status.present'), style: const TextStyle(fontSize: 11, color: Colors.green))),
+          DropdownMenuItem(value: 'partial', child: Text(lang.t('status.partial_short'), style: const TextStyle(fontSize: 11, color: Colors.orange))),
+          DropdownMenuItem(value: 'absent',  child: Text(lang.t('status.absent'), style: const TextStyle(fontSize: 11, color: Colors.red))),
         ],
         onChanged: onChanged,
       ),

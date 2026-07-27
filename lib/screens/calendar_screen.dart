@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../providers/event_provider.dart';
+import '../providers/language_provider.dart';
 import '../models/event.dart';
 import '../widgets/event_card.dart';
 import '../widgets/empty_state.dart';
@@ -44,6 +45,7 @@ class _CalendarScreenState extends State<CalendarScreen>
   Widget build(BuildContext context) {
     super.build(context);
     final eventProv = context.watch<EventProvider>();
+    final lang      = context.watch<LanguageProvider>();
     final selected  = _selected ?? _focused;
     final dayEvents = eventProv.eventsOnDay(selected);
 
@@ -52,7 +54,7 @@ class _CalendarScreenState extends State<CalendarScreen>
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('カレンダー'),
+        title: Text(lang.t('nav.calendar')),
       ),
       body: Column(
         children: [
@@ -117,9 +119,9 @@ class _CalendarScreenState extends State<CalendarScreen>
             child: eventProv.loading
                 ? const Center(child: CircularProgressIndicator())
                 : dayEvents.isEmpty
-                    ? const EmptyState(
+                    ? EmptyState(
                         icon: Icons.event_available_outlined,
-                        title: 'この日の活動はありません',
+                        title: lang.t('event.no_event_day'),
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.only(top: 4, bottom: 12),

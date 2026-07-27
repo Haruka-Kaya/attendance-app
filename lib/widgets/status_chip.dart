@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../providers/language_provider.dart';
 
 class StatusChip extends StatelessWidget {
   final String status;
@@ -8,10 +9,11 @@ class StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.t;
     final (label, color, icon) = switch (status) {
-      'present' => ('出席',    Colors.green,  Icons.check_circle),
-      'partial' => ('部分参加', Colors.orange, Icons.timelapse),
-      _         => ('欠席',    Colors.red,    Icons.cancel),
+      'present' => (lang('status.present'), Colors.green,  Icons.check_circle),
+      'partial' => (lang('status.partial'), Colors.orange, Icons.timelapse),
+      _         => (lang('status.absent'),  Colors.red,    Icons.cancel),
     };
     return Container(
       padding: EdgeInsets.symmetric(
@@ -64,10 +66,11 @@ class StatusActionButtons extends StatelessWidget {
         ),
       );
     }
+    final lang = context.t;
     return Row(children: [
       Expanded(
           child: _StatusBtn(
-              label: '出席',
+              label: lang('status.present'),
               value: 'present',
               selected: selected,
               color: Colors.green,
@@ -77,7 +80,7 @@ class StatusActionButtons extends StatelessWidget {
       const SizedBox(width: 6),
       Expanded(
           child: _StatusBtn(
-              label: '部分',
+              label: lang('status.partial_short'),
               value: 'partial',
               selected: selected,
               color: Colors.orange,
@@ -87,7 +90,7 @@ class StatusActionButtons extends StatelessWidget {
       const SizedBox(width: 6),
       Expanded(
           child: _StatusBtn(
-              label: '欠席',
+              label: lang('status.absent'),
               value: 'absent',
               selected: selected,
               color: Colors.red,
@@ -151,20 +154,21 @@ class StatusSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.t;
     return SegmentedButton<String>(
-      segments: const [
+      segments: [
         ButtonSegment(
             value: 'present',
-            label: Text('出席'),
-            icon: Icon(Icons.check_circle, size: 16)),
+            label: Text(lang('status.present')),
+            icon: const Icon(Icons.check_circle, size: 16)),
         ButtonSegment(
             value: 'partial',
-            label: Text('部分参加'),
-            icon: Icon(Icons.timelapse, size: 16)),
+            label: Text(lang('status.partial')),
+            icon: const Icon(Icons.timelapse, size: 16)),
         ButtonSegment(
             value: 'absent',
-            label: Text('欠席'),
-            icon: Icon(Icons.cancel, size: 16)),
+            label: Text(lang('status.absent')),
+            icon: const Icon(Icons.cancel, size: 16)),
       ],
       selected: {selected},
       onSelectionChanged: (s) => onChanged(s.first),

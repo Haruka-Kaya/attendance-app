@@ -97,12 +97,13 @@ class _AdminShell extends StatefulWidget {
 class _AdminShellState extends State<_AdminShell> {
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     final tabs = <(String, Widget)>[
-      ('活動',       const EventsAdminScreen()),
-      ('出欠管理',       const AttendanceAdminScreen()),
-      ('統計',           const StatsAdminScreen()),
-      ('テンプレート',   const TemplatesAdminScreen()),
-      if (widget.isAdmin) ('ユーザー', const UsersAdminScreen()),
+      (lang.t('admin.events'),       const EventsAdminScreen()),
+      (lang.t('admin.attendance'),       const AttendanceAdminScreen()),
+      (lang.t('admin.stats'),           const StatsAdminScreen()),
+      (lang.t('admin.templates'),   const TemplatesAdminScreen()),
+      if (widget.isAdmin) (lang.t('admin.users'), const UsersAdminScreen()),
     ];
     return DefaultTabController(
       length: tabs.length,
@@ -110,7 +111,7 @@ class _AdminShellState extends State<_AdminShell> {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
-          title: const Text('管理'),
+          title: Text(lang.t('admin.title')),
           bottom: TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,

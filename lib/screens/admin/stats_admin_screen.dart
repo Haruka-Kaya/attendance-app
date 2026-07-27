@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/language_provider.dart';
 import '../../services/api_service.dart';
 import '../../widgets/status_chip.dart';
 
@@ -42,6 +44,7 @@ class _StatsAdminScreenState extends State<StatsAdminScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final lang = context.watch<LanguageProvider>();
     final total = _stats?['total_events'] as int? ?? 0;
     final rawUsers =
         List<Map<String, dynamic>>.from(_stats?['users'] as List? ?? []);
@@ -69,10 +72,10 @@ class _StatsAdminScreenState extends State<StatsAdminScreen>
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              _HeaderStat('総活動', '$total'),
-                              _HeaderStat('参加者数', '${users.length}'),
+                              _HeaderStat(lang.t('admin.total_events'), '$total'),
+                              _HeaderStat(lang.t('admin.participants'), '${users.length}'),
                               _HeaderStat(
-                                '平均出席率',
+                                lang.t('admin.avg_rate'),
                                 users.isEmpty
                                     ? '-'
                                     : '${(users.map((u) => (u['rate'] as double)).reduce((a, b) => a + b) / users.length * 100).toStringAsFixed(1)}%',
@@ -88,17 +91,17 @@ class _StatsAdminScreenState extends State<StatsAdminScreen>
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 4),
                     child: Row(children: [
-                      const Text('並び替え:',
-                          style: TextStyle(fontSize: 12)),
+                      Text(lang.t('admin.sort_by'),
+                          style: const TextStyle(fontSize: 12)),
                       const SizedBox(width: 8),
                       ChoiceChip(
-                        label: const Text('名前', style: TextStyle(fontSize: 11)),
+                        label: Text(lang.t('admin.sort_name'), style: const TextStyle(fontSize: 11)),
                         selected: _sort == 'name',
                         onSelected: (_) => setState(() => _sort = 'name'),
                       ),
                       const SizedBox(width: 4),
                       ChoiceChip(
-                        label: const Text('出席率', style: TextStyle(fontSize: 11)),
+                        label: Text(lang.t('admin.sort_rate'), style: const TextStyle(fontSize: 11)),
                         selected: _sort == 'rate',
                         onSelected: (_) => setState(() => _sort = 'rate'),
                       ),
@@ -108,7 +111,7 @@ class _StatsAdminScreenState extends State<StatsAdminScreen>
                   // ユーザーリスト
                   Expanded(
                     child: users.isEmpty
-                        ? const Center(child: Text('データがありません'))
+                        ? Center(child: Text(lang.t('common.no_data')))
                         : ListView.builder(
                             itemCount: users.length,
                             itemBuilder: (_, i) {
@@ -146,7 +149,7 @@ class _StatsAdminScreenState extends State<StatsAdminScreen>
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      '出席 $present  部分 $partial  欠席 $absent  / $total',
+                                      '${lang.t('status.present')} $present  ${lang.t('status.partial_short')} $partial  ${lang.t('status.absent')} $absent  / $total',
                                       style: TextStyle(
                                           fontSize: 10,
                                           color: Colors.grey.shade600),

@@ -43,10 +43,9 @@ class ProfileScreen extends StatelessWidget {
       // 最新版
       final pkg = await PackageInfo.fromPlatform();
       if (!context.mounted) return;
+      final langProv = context.read<LanguageProvider>();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(lang == 'en'
-            ? 'You are on the latest version (v${pkg.version})'
-            : '最新バージョンです (v${pkg.version})'),
+        content: Text('${langProv.t('prof.latest_version')} (v${pkg.version})'),
         behavior: SnackBarBehavior.floating,
       ));
     }
@@ -141,7 +140,7 @@ class ProfileScreen extends StatelessWidget {
               // アップデート確認 (Android: OTA / iOS: TestFlight 誘導)
               ListTile(
                 leading: const Icon(Icons.system_update_alt),
-                title: Text(lang.lang == 'en' ? 'Check for update' : 'アップデートを確認'),
+                title: Text(lang.t('prof.check_update')),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _checkUpdate(context, lang.lang),
               ),
@@ -165,22 +164,17 @@ class ProfileScreen extends StatelessWidget {
           Card(
             child: ExpansionTile(
               leading: const Icon(Icons.tune),
-              title: Text(lang.lang == 'en' ? 'Advanced' : '詳細設定'),
+              title: Text(lang.t('prof.advanced')),
               subtitle: Text(
-                lang.lang == 'en'
-                    ? 'Developer / troubleshooting'
-                    : '開発者・トラブルシュート用',
+                lang.t('prof.advanced_msg'),
                 style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
               ),
               children: [
                 SwitchListTile(
                   secondary: const Icon(Icons.bug_report_outlined),
-                  title: Text(
-                      lang.lang == 'en' ? 'Verbose error messages' : '詳細エラー表示'),
+                  title: Text(lang.t('prof.verbose_errors')),
                   subtitle: Text(
-                    lang.lang == 'en'
-                        ? 'Show HTTP codes, exception types, etc.'
-                        : 'HTTP コードや例外型などを表示',
+                    lang.t('prof.verbose_errors_msg'),
                     style: const TextStyle(fontSize: 11),
                   ),
                   value: dbg.verboseErrors,
