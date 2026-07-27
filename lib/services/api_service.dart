@@ -109,8 +109,15 @@ class ApiService {
         .toList();
   }
 
-  static Future<void> createUser(Map<String, dynamic> data) =>
-      _dio.post(ApiConfig.users, data: data);
+  /// 新規ユーザー作成。サーバーが temp_password (仮パスワード) を生成して返す。
+  static Future<String?> createUser(Map<String, dynamic> data) async {
+    final res = await _dio.post(ApiConfig.users, data: data);
+    final body = res.data;
+    if (body is Map && body['temp_password'] is String) {
+      return body['temp_password'] as String;
+    }
+    return null;
+  }
 
   static Future<void> updateUser(int id, Map<String, dynamic> data) =>
       _dio.put(ApiConfig.user(id), data: data);

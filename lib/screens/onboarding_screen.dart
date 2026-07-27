@@ -7,7 +7,12 @@ import '../providers/debug_provider.dart';
 import '../providers/language_provider.dart';
 import '../services/api_service.dart';
 
-const _gradeOptions = ['M1', 'M2', 'M3', 'H1', 'H2', 'H3', 'H4', 'OB'];
+// M=中学 / H=高校 / G=グローバル高校 / ID=ID学園 / OB=卒業生。
+// サーバー側 app.py の GRADE_OPTIONS と必ず一致させること。
+const _gradeOptions = [
+  'M1', 'M2', 'M3', 'H1', 'H2', 'H3', 'H4',
+  'G1', 'G2', 'G3', 'ID1', 'ID2', 'ID3', 'OB',
+];
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});

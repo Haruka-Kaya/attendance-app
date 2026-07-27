@@ -4,8 +4,13 @@
 // ================================================================
 
 class ApiConfig {
-  // ── 本番 (Coolify on Vultr + DuckDNS + Let's Encrypt) ────────
-  static const String kBaseUrl = 'https://zenshin9498.duckdns.org';
+  // ── 本番 (さくらのレンタルサーバ / CGI) ──────────────────────
+  // 旧 VPS (Coolify on Vultr + DuckDNS) が停止したため 2026-07 に移行。
+  // さくらでは /attendance 配下に配置しているのでパスまで含める。
+  static const String kBaseUrl = 'https://zenshin-robo.sakura.ne.jp/attendance';
+
+  // 旧本番 (VPS 停止中):
+  // static const String kBaseUrl = 'https://zenshin9498.duckdns.org';
 
   // ── ローカル開発に戻すとき ────────────────────────────────────
   // Android エミュレータ → 10.0.2.2 がホストの localhost に対応

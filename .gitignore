@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# 署名鍵 - 絶対にコミットしない
+# 流出すると偽の更新APKを作られる。紛失すると既存ユーザーが更新不能になる。
+android/key.properties
+*.jks
+*.keystore

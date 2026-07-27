@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/event.dart';
 import '../providers/attendance_provider.dart';
 import '../providers/event_provider.dart';
+import '../providers/language_provider.dart';
 import 'status_chip.dart';
 
 class EventCard extends StatefulWidget {
@@ -40,17 +41,14 @@ class _EventCardState extends State<EventCard> {
     if (!mounted) return;
     setState(() => _saving = false);
     if (err == null) {
-      // 元のEventProviderのデータも更新 (画面再描画用)
       widget.event.myStatus = status;
-      // 軽くフィードバック
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${widget.event.title}: ${_label(status)}'),
+          content: Text('${widget.event.title}: ${_label(context, status)}'),
           duration: const Duration(seconds: 1),
           behavior: SnackBarBehavior.floating,
         ),
       );
-      // EventProvider 再取得
       context.read<EventProvider>().loadUpcoming();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -58,11 +56,14 @@ class _EventCardState extends State<EventCard> {
     }
   }
 
-  String _label(String s) => switch (s) {
-        'present' => '出席',
-        'partial' => '部分参加',
-        _         => '欠席',
-      };
+  String _label(BuildContext context, String s) {
+    final lang = context.read<LanguageProvider>();
+    return switch (s) {
+      'present' => lang.t('status.present'),
+      'partial' => lang.t('status.partial'),
+      _         => lang.t('status.absent'),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +108,16 @@ class _EventCardState extends State<EventCard> {
                                 fontSize: 11,
                                 color: theme.colorScheme.onSurfaceVariant)),
                       ],
+                      if (ev.summary.total > 0) ...[
+                        const SizedBox(height: 6),
+                        Row(children: [
+                          _MiniCount(Icons.check, Colors.green, ev.summary.present),
+                          const SizedBox(width: 6),
+                          _MiniCount(Icons.schedule, Colors.orange, ev.summary.partial),
+                          const SizedBox(width: 6),
+                          _MiniCount(Icons.close, Colors.red.shade300, ev.summary.absent),
+                        ]),
+                      ],
                     ],
                   ),
                 ),
@@ -125,5 +136,23 @@ class _EventCardState extends State<EventCard> {
         ),
       ),
     );
+  }
+}
+
+class _MiniCount extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final int count;
+  const _MiniCount(this.icon, this.color, this.count);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: 11, color: color),
+      const SizedBox(width: 2),
+      Text('$count',
+          style: TextStyle(
+              fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+    ]);
   }
 }

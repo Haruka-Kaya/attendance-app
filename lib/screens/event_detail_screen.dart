@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/event.dart';
 import '../providers/attendance_provider.dart';
+import '../providers/language_provider.dart';
 import '../widgets/status_chip.dart';
 
 class EventDetailScreen extends StatefulWidget {
@@ -56,7 +57,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           .showSnackBar(SnackBar(content: Text(err), backgroundColor: Colors.red));
     } else {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('保存しました')));
+          .showSnackBar(SnackBar(content: Text(context.read<LanguageProvider>().t('att.saved'))));
       Navigator.pop(context);
     }
   }
@@ -64,6 +65,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final ev = widget.event;
+    final lang = context.watch<LanguageProvider>();
     return Scaffold(
       appBar: AppBar(title: Text(ev.title)),
       body: ListView(
@@ -103,7 +105,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           const SizedBox(height: 16),
 
           // attendance form
-          Text('出欠登録',
+          Text(lang.t('att.register'),
               style: Theme.of(context)
                   .textTheme
                   .titleSmall
@@ -119,10 +121,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               Expanded(
                 child: TextFormField(
                   controller: _partialStartCtl,
-                  decoration: const InputDecoration(
-                    labelText: '開始時刻',
-                    hintText: '例: 15:00',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: lang.t('event.start_time'),
+                    hintText: '15:00',
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                 ),
@@ -131,10 +133,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               Expanded(
                 child: TextFormField(
                   controller: _partialEndCtl,
-                  decoration: const InputDecoration(
-                    labelText: '終了時刻',
-                    hintText: '例: 17:00',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: lang.t('event.end_time'),
+                    hintText: '17:00',
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                 ),
@@ -145,9 +147,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
           TextFormField(
             controller: _commentCtl,
-            decoration: const InputDecoration(
-              labelText: 'コメント (任意)',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: lang.t('att.comment'),
+              border: const OutlineInputBorder(),
               isDense: true,
             ),
             maxLines: 2,
@@ -163,11 +165,87 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       width: 20, height: 20,
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
-                  : const Text('保存'),
+                  : Text(lang.t('common.save')),
             ),
           ),
+          const SizedBox(height: 24),
+
+          // 出席予定者リスト
+          if (ev.attendees.isNotEmpty) ...[
+            Row(children: [
+              Text(lang.t('att.summary'),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+              const SizedBox(width: 8),
+              _SummaryBadge(lang.t('status.present'), ev.summary.present, Colors.green),
+              const SizedBox(width: 4),
+              _SummaryBadge(lang.t('status.partial_short'), ev.summary.partial, Colors.orange),
+              const SizedBox(width: 4),
+              _SummaryBadge(lang.t('status.absent'), ev.summary.absent, Colors.red),
+            ]),
+            const SizedBox(height: 8),
+            Card(
+              margin: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  for (final a in [
+                    ...ev.attendees.where((a) => a.status == 'present'),
+                    ...ev.attendees.where((a) => a.status == 'partial'),
+                    ...ev.attendees.where((a) => a.status == 'absent'),
+                  ])
+                    ListTile(
+                      dense: true,
+                      leading: CircleAvatar(
+                        radius: 12,
+                        backgroundColor: switch (a.status) {
+                          'present' => Colors.green,
+                          'partial' => Colors.orange,
+                          _         => Colors.red.shade300,
+                        },
+                        child: Icon(
+                          switch (a.status) {
+                            'present' => Icons.check,
+                            'partial' => Icons.schedule,
+                            _         => Icons.close,
+                          },
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                      ),
+                      title: Text(a.name, style: const TextStyle(fontSize: 14)),
+                      subtitle: a.comment != null && a.comment!.isNotEmpty
+                          ? Text(a.comment!, style: const TextStyle(fontSize: 11))
+                          : null,
+                    ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
+    );
+  }
+}
+
+class _SummaryBadge extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color color;
+  const _SummaryBadge(this.label, this.count, this.color);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text('$label $count',
+          style: TextStyle(
+              fontSize: 11, fontWeight: FontWeight.w600, color: color)),
     );
   }
 }
