@@ -13,9 +13,9 @@ class ThemeProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final val = prefs.getString('theme_mode') ?? 'system';
     _mode = switch (val) {
-      'dark'  => ThemeMode.dark,
+      'dark' => ThemeMode.dark,
       'light' => ThemeMode.light,
-      _       => ThemeMode.system,
+      _ => ThemeMode.system,
     };
     notifyListeners();
   }
@@ -24,10 +24,12 @@ class ThemeProvider extends ChangeNotifier {
     _mode = mode;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('theme_mode', switch (mode) {
-      ThemeMode.dark  => 'dark',
-      ThemeMode.light => 'light',
-      _               => 'system',
-    });
+    await prefs.setString(
+        'theme_mode',
+        switch (mode) {
+          ThemeMode.dark => 'dark',
+          ThemeMode.light => 'light',
+          _ => 'system',
+        });
   }
 }

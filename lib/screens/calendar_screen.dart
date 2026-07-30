@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../config/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../providers/event_provider.dart';
@@ -19,7 +21,7 @@ class _CalendarScreenState extends State<CalendarScreen>
   @override
   bool get wantKeepAlive => true;
 
-  DateTime _focused  = DateTime.now();
+  DateTime _focused = DateTime.now();
   DateTime? _selected;
 
   @override
@@ -30,11 +32,11 @@ class _CalendarScreenState extends State<CalendarScreen>
 
   void _loadMonth(DateTime month) {
     final start = DateTime(month.year, month.month, 1);
-    final end   = DateTime(month.year, month.month + 1, 0);
+    final end = DateTime(month.year, month.month + 1, 0);
     context.read<EventProvider>().loadAll(
-      start: '${start.toIso8601String().substring(0, 10)}',
-      end:   '${end.toIso8601String().substring(0, 10)}',
-    );
+          start: '${start.toIso8601String().substring(0, 10)}',
+          end: '${end.toIso8601String().substring(0, 10)}',
+        );
   }
 
   List<EventModel> _eventsFor(DateTime day) =>
@@ -44,7 +46,7 @@ class _CalendarScreenState extends State<CalendarScreen>
   Widget build(BuildContext context) {
     super.build(context);
     final eventProv = context.watch<EventProvider>();
-    final selected  = _selected ?? _focused;
+    final selected = _selected ?? _focused;
     final dayEvents = eventProv.eventsOnDay(selected);
 
     return Scaffold(
@@ -63,8 +65,10 @@ class _CalendarScreenState extends State<CalendarScreen>
             focusedDay: _focused,
             selectedDayPredicate: (d) => isSameDay(d, _selected),
             eventLoader: _eventsFor,
-            onDaySelected: (sel, foc) =>
-                setState(() { _selected = sel; _focused = foc; }),
+            onDaySelected: (sel, foc) => setState(() {
+              _selected = sel;
+              _focused = foc;
+            }),
             onPageChanged: (foc) {
               _focused = foc;
               _loadMonth(foc);
@@ -86,9 +90,11 @@ class _CalendarScreenState extends State<CalendarScreen>
                 final colors = <Color>{};
                 for (final e in events) {
                   colors.add(switch (e.myStatus) {
-                    'present' => Colors.green,
-                    'partial' => Colors.orange,
-                    _         => Colors.red.shade300,
+                    // 未回答を欠席の赤にしない (DESIGN.md ドメインの約束)
+                    'present' => context.appColors.presentFg,
+                    'partial' => context.appColors.partialFg,
+                    'absent' => context.appColors.absentFg,
+                    _ => context.appColors.unansweredFg,
                   });
                 }
                 return Positioned(
@@ -99,8 +105,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                       for (final c in colors.take(3))
                         Container(
                           margin: const EdgeInsets.symmetric(horizontal: 1),
-                          width: 6, height: 6,
-                          decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+                          width: 6,
+                          height: 6,
+                          decoration:
+                              BoxDecoration(color: c, shape: BoxShape.circle),
                         ),
                     ],
                   ),

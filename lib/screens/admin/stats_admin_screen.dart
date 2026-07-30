@@ -31,8 +31,8 @@ class _StatsAdminScreenState extends State<StatsAdminScreen>
       setState(() => _stats = data);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(e.toString()), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
       }
     } finally {
       setState(() => _loading = false);
@@ -85,20 +85,20 @@ class _StatsAdminScreenState extends State<StatsAdminScreen>
 
                   // ソートボタン
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     child: Row(children: [
-                      const Text('並び替え:',
-                          style: TextStyle(fontSize: 12)),
+                      const Text('並び替え:', style: TextStyle(fontSize: 14)),
                       const SizedBox(width: 8),
                       ChoiceChip(
-                        label: const Text('名前', style: TextStyle(fontSize: 11)),
+                        label: const Text('名前', style: TextStyle(fontSize: 14)),
                         selected: _sort == 'name',
                         onSelected: (_) => setState(() => _sort = 'name'),
                       ),
                       const SizedBox(width: 4),
                       ChoiceChip(
-                        label: const Text('出席率', style: TextStyle(fontSize: 11)),
+                        label:
+                            const Text('出席率', style: TextStyle(fontSize: 14)),
                         selected: _sort == 'rate',
                         onSelected: (_) => setState(() => _sort = 'rate'),
                       ),
@@ -116,7 +116,7 @@ class _StatsAdminScreenState extends State<StatsAdminScreen>
                               final rate = (u['rate'] as double);
                               final present = u['present'] as int;
                               final partial = u['partial'] as int;
-                              final absent  = u['absent']  as int;
+                              final absent = u['absent'] as int;
                               return ListTile(
                                 dense: true,
                                 leading: CircleAvatar(
@@ -125,13 +125,13 @@ class _StatsAdminScreenState extends State<StatsAdminScreen>
                                   child: Text(
                                     '${(rate * 100).round()}%',
                                     style: const TextStyle(
-                                        color: Colors.white, fontSize: 10),
+                                        color: Colors.white, fontSize: 14),
                                   ),
                                 ),
                                 title: Text(u['name'] ?? '',
                                     style: const TextStyle(
                                         fontWeight: FontWeight.w600,
-                                        fontSize: 13)),
+                                        fontSize: 14)),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -148,7 +148,7 @@ class _StatsAdminScreenState extends State<StatsAdminScreen>
                                     Text(
                                       '出席 $present  部分 $partial  欠席 $absent  / $total',
                                       style: TextStyle(
-                                          fontSize: 10,
+                                          fontSize: 14,
                                           color: Colors.grey.shade600),
                                     ),
                                   ],
@@ -186,7 +186,7 @@ class _HeaderStat extends StatelessWidget {
               color: Theme.of(context).colorScheme.onPrimaryContainer)),
       Text(label,
           style: TextStyle(
-              fontSize: 11,
+              fontSize: 14,
               color: Theme.of(context).colorScheme.onPrimaryContainer)),
     ]);
   }

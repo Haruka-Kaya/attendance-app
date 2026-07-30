@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import '../providers/attendance_provider.dart';
 import '../models/attendance.dart';
 import '../widgets/status_chip.dart';
@@ -45,17 +44,17 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen>
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: SegmentedButton<String>(
               segments: const [
-                ButtonSegment(value: 'all',     label: Text('全て')),
+                ButtonSegment(value: 'all', label: Text('全て')),
                 ButtonSegment(value: 'present', label: Text('出席')),
                 ButtonSegment(value: 'partial', label: Text('部分参加')),
-                ButtonSegment(value: 'absent',  label: Text('欠席')),
+                ButtonSegment(value: 'absent', label: Text('欠席')),
               ],
               selected: {_filter},
               onSelectionChanged: (s) => setState(() => _filter = s.first),
               style: ButtonStyle(
                 visualDensity: VisualDensity.compact,
-                textStyle: WidgetStateProperty.all(
-                    const TextStyle(fontSize: 11)),
+                textStyle:
+                    WidgetStateProperty.all(const TextStyle(fontSize: 14)),
               ),
             ),
           ),
@@ -99,18 +98,18 @@ class _RecordTile extends StatelessWidget {
       child: ListTile(
         dense: true,
         title: Text(record.title,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(record.date.toIso8601String().substring(0, 10),
-                style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
             if (record.comment != null && record.comment!.isNotEmpty)
               Text(record.comment!,
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade500)),
           ],
         ),
-        trailing: StatusChip(record.status, fontSize: 11),
+        trailing: StatusChip(record.status, fontSize: 14),
         isThreeLine: record.comment != null && record.comment!.isNotEmpty,
       ),
     );

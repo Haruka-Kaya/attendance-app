@@ -11,13 +11,13 @@ class ChangePasswordScreen extends StatefulWidget {
 }
 
 class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
-  final _formKey    = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   final _currentCtl = TextEditingController();
-  final _newCtl     = TextEditingController();
+  final _newCtl = TextEditingController();
   final _confirmCtl = TextEditingController();
-  bool _obscureCur  = true;
-  bool _obscureNew  = true;
-  bool _saving      = false;
+  bool _obscureCur = true;
+  bool _obscureNew = true;
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -31,9 +31,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     final err = await context.read<AuthProvider>().changePassword(
-      _currentCtl.text,
-      _newCtl.text,
-    );
+          _currentCtl.text,
+          _newCtl.text,
+        );
     setState(() => _saving = false);
     if (!mounted) return;
     if (err != null) {
@@ -68,7 +68,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (widget.forced) ...[
-                    const Icon(Icons.lock_reset, size: 48, color: Colors.orange),
+                    const Icon(Icons.lock_reset,
+                        size: 48, color: Colors.orange),
                     const SizedBox(height: 8),
                     const Text('初回ログインのためパスワードを変更してください',
                         textAlign: TextAlign.center),
@@ -81,6 +82,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       labelText: '現在のパスワード',
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
+                        tooltip: 'パスワードの表示を切り替え',
                         icon: Icon(_obscureCur
                             ? Icons.visibility_off
                             : Icons.visibility),
@@ -99,6 +101,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       labelText: '新しいパスワード',
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
+                        tooltip: 'パスワードの表示を切り替え',
                         icon: Icon(_obscureNew
                             ? Icons.visibility_off
                             : Icons.visibility),
@@ -129,7 +132,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       onPressed: _saving ? null : _submit,
                       child: _saving
                           ? const SizedBox(
-                              width: 20, height: 20,
+                              width: 20,
+                              height: 20,
                               child: CircularProgressIndicator(
                                   strokeWidth: 2, color: Colors.white))
                           : const Text('変更する'),

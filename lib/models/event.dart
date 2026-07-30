@@ -12,9 +12,9 @@ class EventAttendee {
   });
 
   factory EventAttendee.fromJson(Map<String, dynamic> j) => EventAttendee(
-        userId:  j['user_id'] as int,
-        name:    j['name']    as String,
-        status:  j['status']  as String? ?? 'absent',
+        userId: j['user_id'] as int,
+        name: j['name'] as String,
+        status: j['status'] as String? ?? 'unanswered',
         comment: j['comment'] as String?,
       );
 }
@@ -23,19 +23,22 @@ class EventSummary {
   final int present;
   final int partial;
   final int absent;
+  final int unanswered;
   final int total;
   const EventSummary({
     this.present = 0,
     this.partial = 0,
-    this.absent  = 0,
-    this.total   = 0,
+    this.absent = 0,
+    this.unanswered = 0,
+    this.total = 0,
   });
 
   factory EventSummary.fromJson(Map<String, dynamic> j) => EventSummary(
         present: j['present'] as int? ?? 0,
         partial: j['partial'] as int? ?? 0,
-        absent:  j['absent']  as int? ?? 0,
-        total:   j['total']   as int? ?? 0,
+        absent: j['absent'] as int? ?? 0,
+        unanswered: j['unanswered'] as int? ?? 0,
+        total: j['total'] as int? ?? 0,
       );
 }
 
@@ -46,7 +49,7 @@ class EventModel {
   final DateTime date;
   final String startTime;
   final String endTime;
-  String myStatus;      // present / absent / partial
+  String myStatus; // present / absent / partial
   String? myComment;
   String? myPartialStart;
   String? myPartialEnd;
@@ -56,30 +59,30 @@ class EventModel {
   EventModel({
     required this.id,
     required this.title,
-    this.description  = '',
+    this.description = '',
     required this.date,
     required this.startTime,
     required this.endTime,
-    this.myStatus    = 'absent',
+    this.myStatus = 'unanswered',
     this.myComment,
     this.myPartialStart,
     this.myPartialEnd,
-    this.attendees   = const [],
-    this.summary     = const EventSummary(),
+    this.attendees = const [],
+    this.summary = const EventSummary(),
   });
 
   factory EventModel.fromJson(Map<String, dynamic> j) => EventModel(
-        id:             j['id'] as int,
-        title:          j['title'] as String,
-        description:    j['description'] as String? ?? '',
-        date:           DateTime.parse(j['date'] as String),
-        startTime:      j['start_time'] as String,
-        endTime:        j['end_time'] as String,
-        myStatus:       j['my_status'] as String? ?? 'absent',
-        myComment:      j['my_comment'] as String?,
+        id: j['id'] as int,
+        title: j['title'] as String,
+        description: j['description'] as String? ?? '',
+        date: DateTime.parse(j['date'] as String),
+        startTime: j['start_time'] as String,
+        endTime: j['end_time'] as String,
+        myStatus: j['my_status'] as String? ?? 'unanswered',
+        myComment: j['my_comment'] as String?,
         myPartialStart: j['my_partial_start'] as String?,
-        myPartialEnd:   j['my_partial_end'] as String?,
-        attendees:      (j['attendees'] as List?)
+        myPartialEnd: j['my_partial_end'] as String?,
+        attendees: (j['attendees'] as List?)
                 ?.map((e) => EventAttendee.fromJson(e as Map<String, dynamic>))
                 .toList() ??
             const [],
@@ -89,13 +92,17 @@ class EventModel {
       );
 
   Map<String, dynamic> toJson() => {
-        'id': id, 'title': title,
+        'id': id,
+        'title': title,
         'date': date.toIso8601String().substring(0, 10),
-        'start_time': startTime, 'end_time': endTime,
+        'start_time': startTime,
+        'end_time': endTime,
       };
 
   bool get isToday {
     final now = DateTime.now();
-    return date.year == now.year && date.month == now.month && date.day == now.day;
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 }

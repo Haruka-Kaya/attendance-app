@@ -22,20 +22,20 @@ class AttendanceRecord {
   });
 
   factory AttendanceRecord.fromJson(Map<String, dynamic> j) => AttendanceRecord(
-        eventId:      j['id'] as int,
-        title:        j['title'] as String,
-        date:         DateTime.parse(j['date'] as String),
-        startTime:    j['start_time'] as String,
-        endTime:      j['end_time'] as String,
-        status:       j['status'] as String? ?? 'absent',
-        comment:      j['comment'] as String?,
+        eventId: j['id'] as int,
+        title: j['title'] as String,
+        date: DateTime.parse(j['date'] as String),
+        startTime: j['start_time'] as String,
+        endTime: j['end_time'] as String,
+        status: j['status'] as String? ?? 'unanswered',
+        comment: j['comment'] as String?,
         partialStart: j['partial_start'] as String?,
-        partialEnd:   j['partial_end'] as String?,
+        partialEnd: j['partial_end'] as String?,
       );
 
   String get statusLabel => switch (status) {
         'present' => '出席',
         'partial' => '部分参加',
-        _         => '欠席',
+        _ => '欠席',
       };
 }

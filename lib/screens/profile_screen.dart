@@ -54,11 +54,11 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auth  = context.watch<AuthProvider>();
+    final auth = context.watch<AuthProvider>();
     final theme = context.watch<ThemeProvider>();
-    final lang  = context.watch<LanguageProvider>();
-    final dbg   = context.watch<DebugProvider>();
-    final user  = auth.user;
+    final lang = context.watch<LanguageProvider>();
+    final dbg = context.watch<DebugProvider>();
+    final user = auth.user;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -69,8 +69,7 @@ class ProfileScreen extends StatelessWidget {
       ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
-            16, 8, 16,
-            MediaQuery.of(context).padding.bottom + 80),
+            16, 8, 16, MediaQuery.of(context).padding.bottom + 80),
         children: [
           // ユーザー情報
           Card(
@@ -91,9 +90,11 @@ class ProfileScreen extends StatelessWidget {
                       style: const TextStyle(
                           fontWeight: FontWeight.bold, fontSize: 16)),
                   Text(user?.email ?? '',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                      style:
+                          TextStyle(color: Colors.grey.shade600, fontSize: 14)),
                   Text(user?.teamLabel ?? '',
-                      style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                      style:
+                          TextStyle(color: Colors.grey.shade500, fontSize: 14)),
                 ]),
               ]),
             ),
@@ -111,8 +112,10 @@ class ProfileScreen extends StatelessWidget {
                   value: lang.lang,
                   underline: const SizedBox(),
                   items: [
-                    DropdownMenuItem(value: 'ja', child: Text(lang.t('prof.language_ja'))),
-                    DropdownMenuItem(value: 'en', child: Text(lang.t('prof.language_en'))),
+                    DropdownMenuItem(
+                        value: 'ja', child: Text(lang.t('prof.language_ja'))),
+                    DropdownMenuItem(
+                        value: 'en', child: Text(lang.t('prof.language_en'))),
                   ],
                   onChanged: (v) {
                     if (v != null) lang.setLang(v);
@@ -128,9 +131,15 @@ class ProfileScreen extends StatelessWidget {
                   value: theme.mode,
                   underline: const SizedBox(),
                   items: [
-                    DropdownMenuItem(value: ThemeMode.system, child: Text(lang.t('prof.theme_system'))),
-                    DropdownMenuItem(value: ThemeMode.light,  child: Text(lang.t('prof.theme_light'))),
-                    DropdownMenuItem(value: ThemeMode.dark,   child: Text(lang.t('prof.theme_dark'))),
+                    DropdownMenuItem(
+                        value: ThemeMode.system,
+                        child: Text(lang.t('prof.theme_system'))),
+                    DropdownMenuItem(
+                        value: ThemeMode.light,
+                        child: Text(lang.t('prof.theme_light'))),
+                    DropdownMenuItem(
+                        value: ThemeMode.dark,
+                        child: Text(lang.t('prof.theme_dark'))),
                   ],
                   onChanged: (m) {
                     if (m != null) theme.setMode(m);
@@ -141,7 +150,8 @@ class ProfileScreen extends StatelessWidget {
               // アップデート確認 (Android: OTA / iOS: TestFlight 誘導)
               ListTile(
                 leading: const Icon(Icons.system_update_alt),
-                title: Text(lang.lang == 'en' ? 'Check for update' : 'アップデートを確認'),
+                title:
+                    Text(lang.lang == 'en' ? 'Check for update' : 'アップデートを確認'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _checkUpdate(context, lang.lang),
               ),
@@ -170,7 +180,7 @@ class ProfileScreen extends StatelessWidget {
                 lang.lang == 'en'
                     ? 'Developer / troubleshooting'
                     : '開発者・トラブルシュート用',
-                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
               ),
               children: [
                 SwitchListTile(
@@ -181,7 +191,7 @@ class ProfileScreen extends StatelessWidget {
                     lang.lang == 'en'
                         ? 'Show HTTP codes, exception types, etc.'
                         : 'HTTP コードや例外型などを表示',
-                    style: const TextStyle(fontSize: 11),
+                    style: const TextStyle(fontSize: 14),
                   ),
                   value: dbg.verboseErrors,
                   onChanged: (v) => dbg.setVerbose(v),
@@ -228,7 +238,7 @@ class ProfileScreen extends StatelessWidget {
             builder: (_, snap) => Center(
               child: Text(
                 snap.data ?? '',
-                style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
               ),
             ),
           ),
@@ -236,7 +246,7 @@ class ProfileScreen extends StatelessWidget {
           Center(
             child: Text(
               '© 2026 賀屋悠',
-              style: TextStyle(fontSize: 10, color: Colors.grey.shade400),
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade400),
             ),
           ),
         ],

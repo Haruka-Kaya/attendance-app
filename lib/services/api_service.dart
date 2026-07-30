@@ -12,16 +12,18 @@ class SecureStorage {
   static const _store = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
-  static const _kAccess  = 'access_token';
+  static const _kAccess = 'access_token';
   static const _kRefresh = 'refresh_token';
 
-  static Future<String?> getAccessToken()  async => _store.read(key: _kAccess);
+  static Future<String?> getAccessToken() async => _store.read(key: _kAccess);
   static Future<String?> getRefreshToken() async => _store.read(key: _kRefresh);
   static Future<void> saveTokens(String access, String refresh) async {
-    await _store.write(key: _kAccess,  value: access);
+    await _store.write(key: _kAccess, value: access);
     await _store.write(key: _kRefresh, value: refresh);
   }
-  static Future<void> saveAccessToken(String t) => _store.write(key: _kAccess, value: t);
+
+  static Future<void> saveAccessToken(String t) =>
+      _store.write(key: _kAccess, value: t);
   static Future<void> clear() async {
     await _store.delete(key: _kAccess);
     await _store.delete(key: _kRefresh);
@@ -37,13 +39,15 @@ class ApiService {
   static final Dio _dio = Dio(BaseOptions(
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 15),
-  ))..interceptors.add(_AuthInterceptor());
+  ))
+    ..interceptors.add(_AuthInterceptor());
 
   // ── Auth ─────────────────────────────────────────────────────────────────
 
-  static Future<Map<String, dynamic>> login(String email, String password) async {
-    final res = await _dio.post(ApiConfig.login,
-        data: {'email': email, 'password': password});
+  static Future<Map<String, dynamic>> login(
+      String email, String password) async {
+    final res = await _dio
+        .post(ApiConfig.login, data: {'email': email, 'password': password});
     return Map<String, dynamic>.from(res.data as Map);
   }
 
@@ -61,13 +65,20 @@ class ApiService {
 
   static Future<List<EventModel>> getUpcomingEvents() async {
     final res = await _dio.get(ApiConfig.eventsUpcoming);
-    return (res.data as List).map((e) => EventModel.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+    return (res.data as List)
+        .map((e) => EventModel.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
   }
 
-  static Future<List<EventModel>> getEvents({String? start, String? end}) async {
-    final res = await _dio.get(ApiConfig.events,
-        queryParameters: {if (start != null) 'start': start, if (end != null) 'end': end});
-    return (res.data as List).map((e) => EventModel.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+  static Future<List<EventModel>> getEvents(
+      {String? start, String? end}) async {
+    final res = await _dio.get(ApiConfig.events, queryParameters: {
+      if (start != null) 'start': start,
+      if (end != null) 'end': end
+    });
+    return (res.data as List)
+        .map((e) => EventModel.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
   }
 
   static Future<EventModel> addEvent(Map<String, dynamic> data) async {
@@ -86,7 +97,10 @@ class ApiService {
 
   static Future<List<AttendanceRecord>> getMyAttendance() async {
     final res = await _dio.get(ApiConfig.myAttendance);
-    return (res.data as List).map((e) => AttendanceRecord.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+    return (res.data as List)
+        .map((e) =>
+            AttendanceRecord.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
   }
 
   static Future<void> updateAttendance(Map<String, dynamic> data) =>
@@ -124,7 +138,8 @@ class ApiService {
 
   static Future<void> deleteUser(int id) => _dio.delete(ApiConfig.user(id));
 
-  static Future<String?> resetUserPassword(int id, [String? newPassword]) async {
+  static Future<String?> resetUserPassword(int id,
+      [String? newPassword]) async {
     final res = await _dio.post(ApiConfig.resetPassword(id),
         data: newPassword != null ? {'password': newPassword} : null);
     return res.data['temp_password'] as String?;
@@ -134,7 +149,9 @@ class ApiService {
 
   static Future<List<Map<String, dynamic>>> getTemplates() async {
     final res = await _dio.get(ApiConfig.templates);
-    return (res.data as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    return (res.data as List)
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
   }
 
   static Future<void> createTemplate(Map<String, dynamic> data) =>
@@ -164,7 +181,8 @@ class ApiService {
 
 class _AuthInterceptor extends Interceptor {
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+  void onRequest(
+      RequestOptions options, RequestInterceptorHandler handler) async {
     final token = await SecureStorage.getAccessToken();
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';

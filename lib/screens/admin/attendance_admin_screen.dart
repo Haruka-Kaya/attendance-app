@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../../config/app_theme.dart';
+import '../../widgets/status_chip.dart';
 import '../../services/api_service.dart';
 import '../../widgets/status_chip.dart';
 
@@ -29,30 +32,37 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
   }
 
   Future<void> _load() async {
-    setState(() { _loading = true; _dirty = false; });
+    setState(() {
+      _loading = true;
+      _dirty = false;
+    });
     try {
       final dateStr = _date.toIso8601String().substring(0, 10);
       final data = await ApiService.getAttendanceByDate(dateStr);
-      final users  = List<Map<String, dynamic>>.from(data['users']  as List? ?? []);
-      final events = List<Map<String, dynamic>>.from(data['events'] as List? ?? []);
+      final users =
+          List<Map<String, dynamic>>.from(data['users'] as List? ?? []);
+      final events =
+          List<Map<String, dynamic>>.from(data['events'] as List? ?? []);
       setState(() {
         _data = data;
         // 初期ステータスを取得
         _edited = users.map((u) {
-          final ueList = List<Map<String, dynamic>>.from(u['events'] as List? ?? []);
+          final ueList =
+              List<Map<String, dynamic>>.from(u['events'] as List? ?? []);
           return events.map((ev) {
             final match = ueList.firstWhere(
               (ue) => ue['event_id'] == ev['id'],
-              orElse: () => {'status': 'absent'},
+              // レコードが無い＝未回答。欠席に潰さない
+              orElse: () => {'status': 'unanswered'},
             );
-            return match['status'] as String? ?? 'absent';
+            return match['status'] as String? ?? 'unanswered';
           }).toList();
         }).toList();
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('エラー: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('エラー: $e'), backgroundColor: Colors.red));
       }
     } finally {
       setState(() => _loading = false);
@@ -60,18 +70,19 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
   }
 
   Future<void> _save() async {
-    final data    = _data;
+    final data = _data;
     if (data == null) return;
-    final users  = List<Map<String, dynamic>>.from(data['users']  as List? ?? []);
-    final events = List<Map<String, dynamic>>.from(data['events'] as List? ?? []);
+    final users = List<Map<String, dynamic>>.from(data['users'] as List? ?? []);
+    final events =
+        List<Map<String, dynamic>>.from(data['events'] as List? ?? []);
 
     final items = <Map<String, dynamic>>[];
     for (int i = 0; i < users.length; i++) {
       for (int j = 0; j < events.length; j++) {
         items.add({
-          'user_id':  users[i]['id'],
+          'user_id': users[i]['id'],
           'event_id': events[j]['id'],
-          'status':   _edited[i][j],
+          'status': _edited[i][j],
         });
       }
     }
@@ -85,8 +96,8 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('保存失敗: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('保存失敗: $e'), backgroundColor: Colors.red));
       }
     }
   }
@@ -99,7 +110,10 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
       lastDate: DateTime(2030),
     );
     if (d != null) {
-      setState(() { _date = d; _data = null; });
+      setState(() {
+        _date = d;
+        _data = null;
+      });
       await _load();
     }
   }
@@ -107,10 +121,10 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final events = List<Map<String, dynamic>>.from(
-        _data?['events'] as List? ?? []);
-    final users  = List<Map<String, dynamic>>.from(
-        _data?['users']  as List? ?? []);
+    final events =
+        List<Map<String, dynamic>>.from(_data?['events'] as List? ?? []);
+    final users =
+        List<Map<String, dynamic>>.from(_data?['users'] as List? ?? []);
 
     return Scaffold(
       body: Column(
@@ -128,6 +142,7 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
               ),
               const SizedBox(width: 8),
               IconButton(
+                  tooltip: '再読み込み',
                   icon: const Icon(Icons.refresh),
                   onPressed: _load),
             ]),
@@ -163,8 +178,7 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
   }
 
   Widget _buildTable(
-      List<Map<String, dynamic>> users,
-      List<Map<String, dynamic>> events) {
+      List<Map<String, dynamic>> users, List<Map<String, dynamic>> events) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SingleChildScrollView(
@@ -173,14 +187,14 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
           headingRowColor: WidgetStateProperty.all(
               Theme.of(context).colorScheme.primaryContainer),
           columns: [
-            const DataColumn(label: Text('名前', style: TextStyle(fontSize: 12))),
+            const DataColumn(label: Text('名前', style: TextStyle(fontSize: 14))),
             for (final ev in events)
               DataColumn(
                 label: SizedBox(
                   width: 90,
                   child: Text(
                     '${ev['title']}\n${ev['start_time']}–${ev['end_time']}',
-                    style: const TextStyle(fontSize: 10),
+                    style: const TextStyle(fontSize: 14),
                   ),
                 ),
               ),
@@ -188,14 +202,14 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
           rows: List.generate(users.length, (i) {
             final u = users[i];
             return DataRow(cells: [
-              DataCell(Text(u['name'] ?? '',
-                  style: const TextStyle(fontSize: 12))),
+              DataCell(
+                  Text(u['name'] ?? '', style: const TextStyle(fontSize: 14))),
               for (int j = 0; j < events.length; j++)
                 DataCell(
                   _StatusDropdown(
                     value: _edited.length > i && _edited[i].length > j
                         ? _edited[i][j]
-                        : 'absent',
+                        : 'unanswered',
                     onChanged: (v) {
                       if (v != null) {
                         setState(() {
@@ -221,14 +235,26 @@ class _StatusDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     return DropdownButtonHideUnderline(
       child: DropdownButton<String>(
         value: value,
         isDense: true,
-        items: const [
-          DropdownMenuItem(value: 'present', child: Text('出席', style: TextStyle(fontSize: 11, color: Colors.green))),
-          DropdownMenuItem(value: 'partial', child: Text('部分', style: TextStyle(fontSize: 11, color: Colors.orange))),
-          DropdownMenuItem(value: 'absent',  child: Text('欠席', style: TextStyle(fontSize: 11, color: Colors.red))),
+        items: [
+          // 未回答は保存できる値ではないが、項目に含めないと value が一致せず
+          // 空白表示になる。選択できないよう enabled: false にしてある。
+          DropdownMenuItem(
+            value: 'unanswered',
+            enabled: false,
+            child: Text('未回答',
+                style: TextStyle(fontSize: 14, color: c.unansweredFg)),
+          ),
+          for (final s in const ['present', 'partial', 'absent'])
+            DropdownMenuItem(
+              value: s,
+              child: Text(statusLabel(s),
+                  style: TextStyle(fontSize: 14, color: c.fgFor(s))),
+            ),
         ],
         onChanged: onChanged,
       ),

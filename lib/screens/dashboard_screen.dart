@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../config/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/event_provider.dart';
@@ -33,10 +35,10 @@ class _DashboardScreenState extends State<DashboardScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final user        = context.watch<AuthProvider>().user;
-    final eventProv   = context.watch<EventProvider>();
-    final attendProv  = context.watch<AttendanceProvider>();
-    final theme       = Theme.of(context);
+    final user = context.watch<AuthProvider>().user;
+    final eventProv = context.watch<EventProvider>();
+    final attendProv = context.watch<AttendanceProvider>();
+    final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -75,8 +77,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         onRefresh: () async => _load(),
         child: ListView(
           padding: EdgeInsets.fromLTRB(
-              12, 8, 12,
-              MediaQuery.of(context).padding.bottom + 80),
+              12, 8, 12, MediaQuery.of(context).padding.bottom + 80),
           children: [
             // user greeting
             Card(
@@ -92,13 +93,15 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(user?.name ?? '',
-                        style: theme.textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold)),
-                    Text(user?.teamLabel ?? '',
-                        style: theme.textTheme.bodySmall),
-                  ]),
+                  Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(user?.name ?? '',
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold)),
+                        Text(user?.teamLabel ?? '',
+                            style: theme.textTheme.bodySmall),
+                      ]),
                 ]),
               ),
             ),
@@ -142,11 +145,11 @@ class _DashboardScreenState extends State<DashboardScreen>
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           _StatBadge('出席', attendProv.presentCount,
-                              Colors.green),
+                              context.appColors.presentFg),
                           _StatBadge('部分参加', attendProv.partialCount,
-                              Colors.orange),
+                              context.appColors.partialFg),
                           _StatBadge('欠席', attendProv.absentCount,
-                              Colors.red),
+                              context.appColors.absentFg),
                           _StatBadge('合計', attendProv.total,
                               theme.colorScheme.primary),
                         ],
@@ -160,7 +163,8 @@ class _DashboardScreenState extends State<DashboardScreen>
 
             // 今日の活動 (1タップ出欠登録)
             Builder(builder: (_) {
-              final todayEvents = eventProv.upcoming.where((e) => e.isToday).toList();
+              final todayEvents =
+                  eventProv.upcoming.where((e) => e.isToday).toList();
               if (todayEvents.isEmpty) return const SizedBox.shrink();
               return Padding(
                 padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
@@ -170,7 +174,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                     Padding(
                       padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
                       child: Row(children: [
-                        Icon(Icons.bolt, size: 16, color: theme.colorScheme.primary),
+                        Icon(Icons.bolt,
+                            size: 16, color: theme.colorScheme.primary),
                         const SizedBox(width: 4),
                         Text('今日の活動',
                             style: theme.textTheme.titleSmall?.copyWith(
@@ -200,7 +205,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                       ?.copyWith(fontWeight: FontWeight.bold)),
             ),
             if (eventProv.loading)
-              const Center(child: Padding(
+              const Center(
+                  child: Padding(
                 padding: EdgeInsets.all(24),
                 child: CircularProgressIndicator(),
               ))
@@ -210,14 +216,16 @@ class _DashboardScreenState extends State<DashboardScreen>
                 title: '予定されている活動はありません',
               )
             else
-              ...eventProv.upcoming.where((e) => !e.isToday).map((e) => EventCard(
-                    event: e,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => EventDetailScreen(event: e)),
-                    ).then((_) => _load()),
-                  )),
+              ...eventProv.upcoming
+                  .where((e) => !e.isToday)
+                  .map((e) => EventCard(
+                        event: e,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => EventDetailScreen(event: e)),
+                        ).then((_) => _load()),
+                      )),
           ],
         ),
       ),
@@ -243,8 +251,7 @@ class _StatBadge extends StatelessWidget {
       Text('$count',
           style: TextStyle(
               fontSize: 20, fontWeight: FontWeight.bold, color: color)),
-      Text(label,
-          style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+      Text(label, style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
     ]);
   }
 }

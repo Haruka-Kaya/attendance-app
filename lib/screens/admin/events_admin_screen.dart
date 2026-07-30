@@ -54,21 +54,23 @@ class _EventsAdminScreenState extends State<EventsAdminScreen>
                         return ListTile(
                           title: Text(ev.title,
                               style: const TextStyle(
-                                  fontWeight: FontWeight.w600, fontSize: 13)),
+                                  fontWeight: FontWeight.w600, fontSize: 14)),
                           subtitle: Text(
                               '${ev.date.toString().substring(0, 10)}  '
                               '${ev.startTime}–${ev.endTime}',
-                              style: const TextStyle(fontSize: 11)),
+                              style: const TextStyle(fontSize: 14)),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
+                                tooltip: '編集',
                                 icon: const Icon(Icons.edit, size: 18),
                                 onPressed: () => _showForm(context, ev),
                               ),
                               IconButton(
-                                icon: Icon(Icons.delete, size: 18,
-                                    color: Colors.red.shade400),
+                                tooltip: '削除',
+                                icon: Icon(Icons.delete,
+                                    size: 18, color: Colors.red.shade400),
                                 onPressed: () => _delete(context, ev),
                               ),
                             ],
@@ -120,11 +122,11 @@ class _EventForm extends StatefulWidget {
 }
 
 class _EventFormState extends State<_EventForm> {
-  final _formKey     = GlobalKey<FormState>();
-  final _titleCtl    = TextEditingController();
-  final _descCtl     = TextEditingController();
-  final _startCtl    = TextEditingController();
-  final _endCtl      = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _titleCtl = TextEditingController();
+  final _descCtl = TextEditingController();
+  final _startCtl = TextEditingController();
+  final _endCtl = TextEditingController();
   DateTime? _date;
   bool _saving = false;
 
@@ -134,10 +136,10 @@ class _EventFormState extends State<_EventForm> {
     final ev = widget.event;
     if (ev != null) {
       _titleCtl.text = ev.title;
-      _descCtl.text  = ev.description;
+      _descCtl.text = ev.description;
       _startCtl.text = ev.startTime;
-      _endCtl.text   = ev.endTime;
-      _date          = ev.date;
+      _endCtl.text = ev.endTime;
+      _date = ev.date;
     }
   }
 
@@ -160,11 +162,13 @@ class _EventFormState extends State<_EventForm> {
     if (d != null) setState(() => _date = d);
   }
 
-  Future<void> _pickTime(TextEditingController ctl, {required bool isStart}) async {
+  Future<void> _pickTime(TextEditingController ctl,
+      {required bool isStart}) async {
     TimeOfDay? init;
     if (ctl.text.contains(':')) {
       final p = ctl.text.split(':');
-      init = TimeOfDay(hour: int.tryParse(p[0]) ?? 15, minute: int.tryParse(p[1]) ?? 0);
+      init = TimeOfDay(
+          hour: int.tryParse(p[0]) ?? 15, minute: int.tryParse(p[1]) ?? 0);
     } else {
       init = TimeOfDay(hour: isStart ? 15 : 17, minute: 0);
     }
@@ -177,7 +181,8 @@ class _EventFormState extends State<_EventForm> {
       ),
     );
     if (t != null) {
-      ctl.text = '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+      ctl.text =
+          '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
       setState(() {});
     }
   }
@@ -185,23 +190,23 @@ class _EventFormState extends State<_EventForm> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate() || _date == null) {
       if (_date == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('日付を選択してください')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('日付を選択してください')));
       }
       return;
     }
     if (_startCtl.text.isEmpty || _endCtl.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('開始/終了時刻を選択してください')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('開始/終了時刻を選択してください')));
       return;
     }
     setState(() => _saving = true);
     final data = {
-      'title':       _titleCtl.text.trim(),
+      'title': _titleCtl.text.trim(),
       'description': _descCtl.text.trim(),
-      'date':        _date!.toIso8601String().substring(0, 10),
-      'start_time':  _startCtl.text.trim(),
-      'end_time':    _endCtl.text.trim(),
+      'date': _date!.toIso8601String().substring(0, 10),
+      'start_time': _startCtl.text.trim(),
+      'end_time': _endCtl.text.trim(),
     };
     final prov = context.read<EventProvider>();
     bool ok;
@@ -215,8 +220,8 @@ class _EventFormState extends State<_EventForm> {
     if (ok) {
       Navigator.pop(context);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('保存に失敗しました'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('保存に失敗しました'), backgroundColor: Colors.red));
     }
   }
 
@@ -232,21 +237,24 @@ class _EventFormState extends State<_EventForm> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(widget.event == null ? '活動追加' : '活動編集',
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 16)),
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 12),
             TextFormField(
               controller: _titleCtl,
               decoration: const InputDecoration(
-                  labelText: 'タイトル', border: OutlineInputBorder(), isDense: true),
-              validator: (v) =>
-                  (v == null || v.isEmpty) ? '入力してください' : null,
+                  labelText: 'タイトル',
+                  border: OutlineInputBorder(),
+                  isDense: true),
+              validator: (v) => (v == null || v.isEmpty) ? '入力してください' : null,
             ),
             const SizedBox(height: 8),
             TextFormField(
               controller: _descCtl,
               decoration: const InputDecoration(
-                  labelText: '説明 (任意)', border: OutlineInputBorder(), isDense: true),
+                  labelText: '説明 (任意)',
+                  border: OutlineInputBorder(),
+                  isDense: true),
               maxLines: 2,
             ),
             const SizedBox(height: 8),
@@ -280,7 +288,8 @@ class _EventFormState extends State<_EventForm> {
               onPressed: _saving ? null : _save,
               child: _saving
                   ? const SizedBox(
-                      width: 18, height: 18,
+                      width: 18,
+                      height: 18,
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Text('保存'),

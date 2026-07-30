@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../config/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../models/event.dart';
 import '../providers/attendance_provider.dart';
@@ -14,18 +16,18 @@ class EventDetailScreen extends StatefulWidget {
 
 class _EventDetailScreenState extends State<EventDetailScreen> {
   late String _status;
-  final _commentCtl      = TextEditingController();
+  final _commentCtl = TextEditingController();
   final _partialStartCtl = TextEditingController();
-  final _partialEndCtl   = TextEditingController();
+  final _partialEndCtl = TextEditingController();
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
     _status = widget.event.myStatus;
-    _commentCtl.text      = widget.event.myComment ?? '';
+    _commentCtl.text = widget.event.myComment ?? '';
     _partialStartCtl.text = widget.event.myPartialStart ?? '';
-    _partialEndCtl.text   = widget.event.myPartialEnd ?? '';
+    _partialEndCtl.text = widget.event.myPartialEnd ?? '';
   }
 
   @override
@@ -39,21 +41,21 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   Future<void> _save() async {
     setState(() => _saving = true);
     final err = await context.read<AttendanceProvider>().update(
-      eventId:      widget.event.id,
-      status:       _status,
-      comment:      _commentCtl.text.isEmpty ? null : _commentCtl.text,
-      partialStart: _status == 'partial' && _partialStartCtl.text.isNotEmpty
-          ? _partialStartCtl.text
-          : null,
-      partialEnd:   _status == 'partial' && _partialEndCtl.text.isNotEmpty
-          ? _partialEndCtl.text
-          : null,
-    );
+          eventId: widget.event.id,
+          status: _status,
+          comment: _commentCtl.text.isEmpty ? null : _commentCtl.text,
+          partialStart: _status == 'partial' && _partialStartCtl.text.isNotEmpty
+              ? _partialStartCtl.text
+              : null,
+          partialEnd: _status == 'partial' && _partialEndCtl.text.isNotEmpty
+              ? _partialEndCtl.text
+              : null,
+        );
     setState(() => _saving = false);
     if (!mounted) return;
     if (err != null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(err), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(err), backgroundColor: Colors.red));
     } else {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('保存しました')));
@@ -110,8 +112,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   ?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           StatusSelector(
-              selected: _status,
-              onChanged: (s) => setState(() => _status = s)),
+              selected: _status, onChanged: (s) => setState(() => _status = s)),
           const SizedBox(height: 12),
 
           if (_status == 'partial') ...[
@@ -160,7 +161,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               onPressed: _saving ? null : _save,
               child: _saving
                   ? const SizedBox(
-                      width: 20, height: 20,
+                      width: 20,
+                      height: 20,
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Text('保存'),
@@ -177,11 +179,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       .titleSmall
                       ?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(width: 8),
-              _SummaryBadge('出席', ev.summary.present, Colors.green),
+              _SummaryBadge(
+                  '出席', ev.summary.present, context.appColors.presentFg),
               const SizedBox(width: 4),
-              _SummaryBadge('部分', ev.summary.partial, Colors.orange),
+              _SummaryBadge(
+                  '部分', ev.summary.partial, context.appColors.partialFg),
               const SizedBox(width: 4),
-              _SummaryBadge('欠席', ev.summary.absent, Colors.red),
+              _SummaryBadge(
+                  '欠席', ev.summary.absent, context.appColors.absentFg),
+              const SizedBox(width: 4),
+              _SummaryBadge(
+                  '未回答', ev.summary.unanswered, context.appColors.unansweredFg),
             ]),
             const SizedBox(height: 8),
             Card(
@@ -198,15 +206,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       leading: CircleAvatar(
                         radius: 12,
                         backgroundColor: switch (a.status) {
-                          'present' => Colors.green,
-                          'partial' => Colors.orange,
-                          _         => Colors.red.shade300,
+                          'present' => context.appColors.presentFg,
+                          'partial' => context.appColors.partialFg,
+                          'absent' => context.appColors.absentFg,
+                          _ => context.appColors.unansweredFg,
                         },
                         child: Icon(
                           switch (a.status) {
-                            'present' => Icons.check,
-                            'partial' => Icons.schedule,
-                            _         => Icons.close,
+                            'present' => Icons.check_circle,
+                            'partial' => Icons.contrast,
+                            'absent' => Icons.remove_circle,
+                            _ => Icons.close,
                           },
                           color: Colors.white,
                           size: 14,
@@ -214,7 +224,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       ),
                       title: Text(a.name, style: const TextStyle(fontSize: 14)),
                       subtitle: a.comment != null && a.comment!.isNotEmpty
-                          ? Text(a.comment!, style: const TextStyle(fontSize: 11))
+                          ? Text(a.comment!,
+                              style: const TextStyle(fontSize: 14))
                           : null,
                     ),
                 ],
@@ -243,7 +254,7 @@ class _SummaryBadge extends StatelessWidget {
       ),
       child: Text('$label $count',
           style: TextStyle(
-              fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+              fontSize: 14, fontWeight: FontWeight.w600, color: color)),
     );
   }
 }

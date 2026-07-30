@@ -18,8 +18,8 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
   List<Map<String, dynamic>> _users = [];
   bool _loading = false;
   String _query = '';
-  String _filterPos = '';   // '' / tech / ops / teacher
-  String _filterRole = '';  // '' / user / manager / admin
+  String _filterPos = ''; // '' / tech / ops / teacher
+  String _filterRole = ''; // '' / user / manager / admin
 
   @override
   void initState() {
@@ -46,7 +46,7 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
     final q = _query.trim().toLowerCase();
     return _users.where((u) {
       if (q.isNotEmpty) {
-        final name  = (u['name']  as String? ?? '').toLowerCase();
+        final name = (u['name'] as String? ?? '').toLowerCase();
         final email = (u['email'] as String? ?? '').toLowerCase();
         if (!name.contains(q) && !email.contains(q)) return false;
       }
@@ -86,6 +86,7 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
                 suffixIcon: _query.isEmpty
                     ? null
                     : IconButton(
+                        tooltip: '検索条件をクリア',
                         icon: const Icon(Icons.clear, size: 18),
                         onPressed: () => setState(() => _query = '')),
               ),
@@ -113,7 +114,7 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Text('${filtered.length} 件',
-                style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
           ),
           Expanded(
             child: _loading
@@ -131,68 +132,73 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
                             itemCount: filtered.length,
                             itemBuilder: (_, i) {
                               final u = filtered[i];
-                        final role = u['role'] ?? 'user';
-                        final positions = List<String>.from(u['positions'] ?? []);
-                        final posLabel = positions.map((p) => switch (p) {
-                          'tech'    => '技術班',
-                          'ops'     => '運営班',
-                          'teacher' => '顧問',
-                          _ => p,
-                        }).join(', ');
+                              final role = u['role'] ?? 'user';
+                              final positions =
+                                  List<String>.from(u['positions'] ?? []);
+                              final posLabel = positions
+                                  .map((p) => switch (p) {
+                                        'tech' => '技術班',
+                                        'ops' => '運営班',
+                                        'teacher' => '顧問',
+                                        _ => p,
+                                      })
+                                  .join(', ');
 
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: _roleColor(role),
-                            radius: 18,
-                            child: Text(
-                              (u['name'] as String?)?.isNotEmpty == true
-                                  ? (u['name'] as String)[0]
-                                  : '?',
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 13),
-                            ),
-                          ),
-                          title: Text(u['name'] ?? '',
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w600, fontSize: 13)),
-                          subtitle: Text(
-                              '${u['email'] ?? ''}  ${posLabel.isNotEmpty ? "[$posLabel]" : ""}',
-                              style: const TextStyle(fontSize: 11)),
-                          trailing: PopupMenuButton<String>(
-                            itemBuilder: (_) => [
-                              const PopupMenuItem(
-                                  value: 'edit',
-                                  child: ListTile(
-                                      leading: Icon(Icons.edit),
-                                      title: Text('編集'),
-                                      dense: true)),
-                              const PopupMenuItem(
-                                  value: 'reset',
-                                  child: ListTile(
-                                      leading: Icon(Icons.lock_reset),
-                                      title: Text('PW初期化'),
-                                      dense: true)),
-                              const PopupMenuItem(
-                                  value: 'delete',
-                                  child: ListTile(
-                                      leading: Icon(Icons.delete,
-                                          color: Colors.red),
-                                      title: Text('削除',
-                                          style: TextStyle(color: Colors.red)),
-                                      dense: true)),
-                            ],
-                            onSelected: (action) async {
-                              switch (action) {
-                                case 'edit':
-                                  _showForm(context, u);
-                                case 'reset':
-                                  await _resetPassword(context, u);
-                                case 'delete':
-                                  await _deleteUser(context, u);
-                              }
-                            },
-                          ),
-                        );
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: _roleColor(role),
+                                  radius: 18,
+                                  child: Text(
+                                    (u['name'] as String?)?.isNotEmpty == true
+                                        ? (u['name'] as String)[0]
+                                        : '?',
+                                    style: const TextStyle(
+                                        color: Colors.white, fontSize: 14),
+                                  ),
+                                ),
+                                title: Text(u['name'] ?? '',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14)),
+                                subtitle: Text(
+                                    '${u['email'] ?? ''}  ${posLabel.isNotEmpty ? "[$posLabel]" : ""}',
+                                    style: const TextStyle(fontSize: 14)),
+                                trailing: PopupMenuButton<String>(
+                                  itemBuilder: (_) => [
+                                    const PopupMenuItem(
+                                        value: 'edit',
+                                        child: ListTile(
+                                            leading: Icon(Icons.edit),
+                                            title: Text('編集'),
+                                            dense: true)),
+                                    const PopupMenuItem(
+                                        value: 'reset',
+                                        child: ListTile(
+                                            leading: Icon(Icons.lock_reset),
+                                            title: Text('PW初期化'),
+                                            dense: true)),
+                                    const PopupMenuItem(
+                                        value: 'delete',
+                                        child: ListTile(
+                                            leading: Icon(Icons.delete,
+                                                color: Colors.red),
+                                            title: Text('削除',
+                                                style: TextStyle(
+                                                    color: Colors.red)),
+                                            dense: true)),
+                                  ],
+                                  onSelected: (action) async {
+                                    switch (action) {
+                                      case 'edit':
+                                        _showForm(context, u);
+                                      case 'reset':
+                                        await _resetPassword(context, u);
+                                      case 'delete':
+                                        await _deleteUser(context, u);
+                                    }
+                                  },
+                                ),
+                              );
                             },
                           ),
                   ),
@@ -207,7 +213,7 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
     return Padding(
       padding: const EdgeInsets.only(right: 6),
       child: ChoiceChip(
-        label: Text(label, style: const TextStyle(fontSize: 11)),
+        label: Text(label, style: const TextStyle(fontSize: 14)),
         selected: selected,
         onSelected: (_) => setState(() {
           if (isPos) {
@@ -224,9 +230,9 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
 
   Color _roleColor(String role) {
     return switch (role) {
-      'admin'   => Colors.red.shade600,
+      'admin' => Colors.red.shade600,
       'manager' => Colors.orange.shade700,
-      _         => Colors.blue.shade600,
+      _ => Colors.blue.shade600,
     };
   }
 
@@ -245,8 +251,7 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('キャンセル')),
+              onPressed: () => Navigator.pop(ctx), child: const Text('キャンセル')),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, ctrl.text),
               child: const Text('設定')),
@@ -265,8 +270,7 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
     }
   }
 
-  Future<void> _deleteUser(
-      BuildContext context, Map<String, dynamic> u) async {
+  Future<void> _deleteUser(BuildContext context, Map<String, dynamic> u) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -278,8 +282,7 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
               child: const Text('キャンセル')),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text('削除',
-                  style: TextStyle(color: Colors.red.shade600))),
+              child: Text('削除', style: TextStyle(color: Colors.red.shade600))),
         ],
       ),
     );
@@ -289,9 +292,8 @@ class _UsersAdminScreenState extends State<UsersAdminScreen>
         await _load();
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content: Text(e.toString()), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(e.toString()), backgroundColor: Colors.red));
         }
       }
     }
@@ -316,18 +318,30 @@ class _UserForm extends StatefulWidget {
 }
 
 class _UserFormState extends State<_UserForm> {
-  final _formKey   = GlobalKey<FormState>();
-  final _nameCtl   = TextEditingController();
-  final _emailCtl  = TextEditingController();
-  String _role     = 'user';
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtl = TextEditingController();
+  final _emailCtl = TextEditingController();
+  String _role = 'user';
   String? _grade; // null = 未設定
-  String _class    = '';
+  String _class = '';
 
   // M=中学 / H=高校 / G=グローバル高校 / ID=ID学園 / OB=卒業生。
   // サーバー側 app.py の GRADE_OPTIONS と必ず一致させること。
   static const _gradeOptions = [
-    'M1', 'M2', 'M3', 'H1', 'H2', 'H3', 'H4',
-    'G1', 'G2', 'G3', 'ID1', 'ID2', 'ID3', 'OB',
+    'M1',
+    'M2',
+    'M3',
+    'H1',
+    'H2',
+    'H3',
+    'H4',
+    'G1',
+    'G2',
+    'G3',
+    'ID1',
+    'ID2',
+    'ID3',
+    'OB',
   ];
   final Set<String> _positions = {};
   bool _saving = false;
@@ -337,12 +351,12 @@ class _UserFormState extends State<_UserForm> {
     super.initState();
     final u = widget.user;
     if (u != null) {
-      _nameCtl.text  = u['name'] ?? '';
+      _nameCtl.text = u['name'] ?? '';
       _emailCtl.text = u['email'] ?? '';
-      _role          = u['role'] ?? 'user';
+      _role = u['role'] ?? 'user';
       final gRaw = u['grade']?.toString();
-      _grade         = (gRaw != null && _gradeOptions.contains(gRaw)) ? gRaw : null;
-      _class         = u['user_class'] ?? '';
+      _grade = (gRaw != null && _gradeOptions.contains(gRaw)) ? gRaw : null;
+      _class = u['user_class'] ?? '';
       _positions.addAll(List<String>.from(u['positions'] ?? []));
     }
   }
@@ -358,12 +372,12 @@ class _UserFormState extends State<_UserForm> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     final data = <String, dynamic>{
-      'name':       _nameCtl.text.trim(),
-      'email':      _emailCtl.text.trim(),
-      'role':       _role,
-      'grade':      _grade, // null OK
+      'name': _nameCtl.text.trim(),
+      'email': _emailCtl.text.trim(),
+      'role': _role,
+      'grade': _grade, // null OK
       'user_class': _class,
-      'positions':  _positions.toList(),
+      'positions': _positions.toList(),
     };
     try {
       if (widget.user == null) {
@@ -388,7 +402,8 @@ class _UserFormState extends State<_UserForm> {
     }
   }
 
-  Future<void> _showTempPasswordDialog(BuildContext ctx, String name, String pw) {
+  Future<void> _showTempPasswordDialog(
+      BuildContext ctx, String name, String pw) {
     return showDialog<void>(
       context: ctx,
       barrierDismissible: false,
@@ -418,7 +433,7 @@ class _UserFormState extends State<_UserForm> {
             const SizedBox(height: 8),
             Text(
               '初回ログイン時に本人がパスワードと profile を設定します。\nこの画面を閉じると仮パスワードは再表示できません。',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
             ),
           ],
         ),
@@ -429,7 +444,8 @@ class _UserFormState extends State<_UserForm> {
             onPressed: () {
               Clipboard.setData(ClipboardData(text: pw));
               ScaffoldMessenger.of(ctx).showSnackBar(
-                const SnackBar(content: Text('コピーしました'),
+                const SnackBar(
+                    content: Text('コピーしました'),
                     behavior: SnackBarBehavior.floating,
                     duration: Duration(seconds: 1)),
               );
@@ -463,33 +479,38 @@ class _UserFormState extends State<_UserForm> {
               TextFormField(
                 controller: _nameCtl,
                 decoration: const InputDecoration(
-                    labelText: '名前', border: OutlineInputBorder(), isDense: true),
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? '入力してください' : null,
+                    labelText: '名前',
+                    border: OutlineInputBorder(),
+                    isDense: true),
+                validator: (v) => (v == null || v.isEmpty) ? '入力してください' : null,
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _emailCtl,
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
-                    labelText: 'メール', border: OutlineInputBorder(), isDense: true),
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? '入力してください' : null,
+                    labelText: 'メール',
+                    border: OutlineInputBorder(),
+                    isDense: true),
+                validator: (v) => (v == null || v.isEmpty) ? '入力してください' : null,
               ),
               const SizedBox(height: 8),
               if (widget.user == null) ...[
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(children: [
                     const Icon(Icons.info_outline, size: 16),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(
+                    Expanded(
+                        child: Text(
                       '仮パスワードは作成後に自動発行されます。\n本人が初回ログイン時に正式なパスワードを設定します。',
-                      style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                      style:
+                          TextStyle(fontSize: 14, color: Colors.grey.shade700),
                     )),
                   ]),
                 ),
@@ -501,11 +522,13 @@ class _UserFormState extends State<_UserForm> {
                     value: _role,
                     isDense: true,
                     decoration: const InputDecoration(
-                        labelText: '権限', border: OutlineInputBorder(), isDense: true),
+                        labelText: '権限',
+                        border: OutlineInputBorder(),
+                        isDense: true),
                     items: const [
-                      DropdownMenuItem(value: 'user',    child: Text('一般')),
+                      DropdownMenuItem(value: 'user', child: Text('一般')),
                       DropdownMenuItem(value: 'manager', child: Text('管理者')),
-                      DropdownMenuItem(value: 'admin',   child: Text('最高権限')),
+                      DropdownMenuItem(value: 'admin', child: Text('最高権限')),
                     ],
                     onChanged: (v) => setState(() => _role = v!),
                   ),
@@ -516,9 +539,12 @@ class _UserFormState extends State<_UserForm> {
                     value: _grade,
                     isDense: true,
                     decoration: const InputDecoration(
-                        labelText: '学年 (任意)', border: OutlineInputBorder(), isDense: true),
+                        labelText: '学年 (任意)',
+                        border: OutlineInputBorder(),
+                        isDense: true),
                     items: [
-                      const DropdownMenuItem<String?>(value: null, child: Text('未設定')),
+                      const DropdownMenuItem<String?>(
+                          value: null, child: Text('未設定')),
                       for (final g in _gradeOptions)
                         DropdownMenuItem<String?>(value: g, child: Text(g)),
                     ],
@@ -527,7 +553,7 @@ class _UserFormState extends State<_UserForm> {
                 ),
               ]),
               const SizedBox(height: 12),
-              const Text('班', style: TextStyle(fontSize: 12)),
+              const Text('班', style: TextStyle(fontSize: 14)),
               Wrap(
                 spacing: 8,
                 children: [
@@ -537,7 +563,7 @@ class _UserFormState extends State<_UserForm> {
                     ('teacher', '顧問'),
                   ])
                     FilterChip(
-                      label: Text(label, style: const TextStyle(fontSize: 12)),
+                      label: Text(label, style: const TextStyle(fontSize: 14)),
                       selected: _positions.contains(val),
                       onSelected: (on) => setState(() {
                         on ? _positions.add(val) : _positions.remove(val);
@@ -550,7 +576,8 @@ class _UserFormState extends State<_UserForm> {
                 onPressed: _saving ? null : _save,
                 child: _saving
                     ? const SizedBox(
-                        width: 18, height: 18,
+                        width: 18,
+                        height: 18,
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white))
                     : const Text('保存'),

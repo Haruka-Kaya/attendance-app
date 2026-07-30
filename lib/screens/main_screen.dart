@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
-import '../config/glass_theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
-import '../widgets/gradient_background.dart';
 import 'dashboard_screen.dart';
 import 'calendar_screen.dart';
 import 'my_attendance_screen.dart';
@@ -27,9 +24,9 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user      = context.watch<AuthProvider>().user;
-    final lang      = context.watch<LanguageProvider>();
-    final isAdmin   = user?.isAdmin   ?? false;
+    final user = context.watch<AuthProvider>().user;
+    final lang = context.watch<LanguageProvider>();
+    final isAdmin = user?.isAdmin ?? false;
     final isManager = user?.isManager ?? false;
 
     final tabs = <_TabSpec>[
@@ -40,8 +37,10 @@ class _MainScreenState extends State<MainScreen> {
       _TabSpec(Icons.assignment_outlined, Icons.assignment,
           lang.t('nav.my_attendance'), const MyAttendanceScreen()),
       if (isAdmin || isManager)
-        _TabSpec(Icons.admin_panel_settings_outlined,
-            Icons.admin_panel_settings, lang.t('nav.admin'),
+        _TabSpec(
+            Icons.admin_panel_settings_outlined,
+            Icons.admin_panel_settings,
+            lang.t('nav.admin'),
             _AdminShell(isAdmin: isAdmin)),
       _TabSpec(Icons.person_outline, Icons.person, lang.t('nav.profile'),
           const ProfileScreen()),
@@ -49,30 +48,36 @@ class _MainScreenState extends State<MainScreen> {
 
     final maxIndex = tabs.length - 1;
     if (_index > maxIndex) {
-      WidgetsBinding.instance.addPostFrameCallback(
-          (_) => setState(() => _index = 0));
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => setState(() => _index = 0));
     }
 
+    // ガラス越しに見せる必要が無くなったので extendBody は使わない。
+    // 階層は面の明度差と境界線で作る (DESIGN.md §1.3 / §6)。
     return Scaffold(
-      extendBody: true,
-      body: GradientBackground(
-        child: IndexedStack(
-          index: _index.clamp(0, maxIndex),
-          children: [for (final t in tabs) t.screen],
-        ),
+      body: IndexedStack(
+        index: _index.clamp(0, maxIndex),
+        children: [for (final t in tabs) t.screen],
       ),
-      bottomNavigationBar: GlassBottomBar(
-        selectedIndex: _index.clamp(0, maxIndex),
-        onTabSelected: (i) => setState(() => _index = i),
-        glassSettings: kGlassSettings,
-        tabs: [
-          for (final t in tabs)
-            GlassBottomBarTab(
-              label: t.label,
-              icon: Icon(t.icon),
-              activeIcon: Icon(t.activeIcon),
-            ),
-        ],
+      bottomNavigationBar: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(
+            top:
+                BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+          ),
+        ),
+        child: NavigationBar(
+          selectedIndex: _index.clamp(0, maxIndex),
+          onDestinationSelected: (i) => setState(() => _index = i),
+          destinations: [
+            for (final t in tabs)
+              NavigationDestination(
+                icon: Icon(t.icon),
+                selectedIcon: Icon(t.activeIcon),
+                label: t.label,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -98,18 +103,16 @@ class _AdminShellState extends State<_AdminShell> {
   @override
   Widget build(BuildContext context) {
     final tabs = <(String, Widget)>[
-      ('活動',       const EventsAdminScreen()),
-      ('出欠管理',       const AttendanceAdminScreen()),
-      ('統計',           const StatsAdminScreen()),
-      ('テンプレート',   const TemplatesAdminScreen()),
+      ('活動', const EventsAdminScreen()),
+      ('出欠管理', const AttendanceAdminScreen()),
+      ('統計', const StatsAdminScreen()),
+      ('テンプレート', const TemplatesAdminScreen()),
       if (widget.isAdmin) ('ユーザー', const UsersAdminScreen()),
     ];
     return DefaultTabController(
       length: tabs.length,
       child: Scaffold(
-        backgroundColor: Colors.transparent,
         appBar: AppBar(
-          backgroundColor: Colors.transparent,
           title: const Text('管理'),
           bottom: TabBar(
             isScrollable: true,

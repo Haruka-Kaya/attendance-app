@@ -11,10 +11,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey  = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   final _emailCtl = TextEditingController();
-  final _passCtl  = TextEditingController();
-  bool _obscure   = true;
+  final _passCtl = TextEditingController();
+  bool _obscure = true;
 
   @override
   void dispose() {
@@ -26,9 +26,9 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final err = await context.read<AuthProvider>().login(
-      _emailCtl.text.trim(),
-      _passCtl.text,
-    );
+          _emailCtl.text.trim(),
+          _passCtl.text,
+        );
     if (err != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(err), backgroundColor: Colors.red),
@@ -38,9 +38,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final auth    = context.watch<AuthProvider>();
+    final auth = context.watch<AuthProvider>();
     final loading = auth.loading;
-    final lang    = context.watch<LanguageProvider>();
+    final lang = context.watch<LanguageProvider>();
     return Scaffold(
       body: SafeArea(
         child: Stack(
@@ -56,8 +56,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   initialValue: lang.lang,
                   onSelected: (v) => lang.setLang(v),
                   itemBuilder: (_) => [
-                    PopupMenuItem(value: 'ja', child: Text(lang.t('prof.language_ja'))),
-                    PopupMenuItem(value: 'en', child: Text(lang.t('prof.language_en'))),
+                    PopupMenuItem(
+                        value: 'ja', child: Text(lang.t('prof.language_ja'))),
+                    PopupMenuItem(
+                        value: 'en', child: Text(lang.t('prof.language_en'))),
                   ],
                 ),
               ),
@@ -72,11 +74,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.groups, size: 64,
+                        Icon(Icons.groups,
+                            size: 64,
                             color: Theme.of(context).colorScheme.primary),
                         const SizedBox(height: 8),
                         Text(lang.t('app_title'),
-                            style: Theme.of(context).textTheme.headlineSmall
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
                                 ?.copyWith(fontWeight: FontWeight.bold)),
                         const SizedBox(height: 32),
                         TextFormField(
@@ -87,8 +92,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             prefixIcon: const Icon(Icons.email_outlined),
                             border: const OutlineInputBorder(),
                           ),
-                          validator: (v) =>
-                              (v == null || v.isEmpty) ? lang.t('common.required') : null,
+                          validator: (v) => (v == null || v.isEmpty)
+                              ? lang.t('common.required')
+                              : null,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
@@ -99,13 +105,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             prefixIcon: const Icon(Icons.lock_outline),
                             border: const OutlineInputBorder(),
                             suffixIcon: IconButton(
-                              icon: Icon(
-                                  _obscure ? Icons.visibility_off : Icons.visibility),
-                              onPressed: () => setState(() => _obscure = !_obscure),
+                              tooltip: 'パスワードの表示を切り替え',
+                              icon: Icon(_obscure
+                                  ? Icons.visibility_off
+                                  : Icons.visibility),
+                              onPressed: () =>
+                                  setState(() => _obscure = !_obscure),
                             ),
                           ),
-                          validator: (v) =>
-                              (v == null || v.isEmpty) ? lang.t('common.required') : null,
+                          validator: (v) => (v == null || v.isEmpty)
+                              ? lang.t('common.required')
+                              : null,
                           onFieldSubmitted: (_) => _submit(),
                         ),
                         const SizedBox(height: 24),
@@ -116,7 +126,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: loading ? null : _submit,
                             child: loading
                                 ? const SizedBox(
-                                    width: 20, height: 20,
+                                    width: 20,
+                                    height: 20,
                                     child: CircularProgressIndicator(
                                         strokeWidth: 2, color: Colors.white))
                                 : Text(lang.t('auth.login')),
@@ -126,7 +137,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         Text(
                           lang.t('auth.forgot_pw'),
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                          style: TextStyle(
+                              fontSize: 14, color: Colors.grey.shade600),
                         ),
                       ],
                     ),

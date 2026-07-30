@@ -45,23 +45,23 @@ class UpdateService {
       final res = await dio.get('${ApiConfig.kBaseUrl}/api/v1/app/latest');
       final data = Map<String, dynamic>.from(res.data as Map);
 
-      final pkg     = await PackageInfo.fromPlatform();
+      final pkg = await PackageInfo.fromPlatform();
       final current = pkg.version;
-      final latest  = data['latest_version'] as String;
-      final minSup  = data['min_supported_version'] as String? ?? '0.0.0';
+      final latest = data['latest_version'] as String;
+      final minSup = data['min_supported_version'] as String? ?? '0.0.0';
 
       final needsUpdate = _compare(current, latest) < 0;
-      final forced      = _compare(current, minSup) < 0;
+      final forced = _compare(current, minSup) < 0;
 
       if (!needsUpdate && !forced) return null;
 
       return UpdateInfo(
-        currentVersion:      current,
-        latestVersion:       latest,
+        currentVersion: current,
+        latestVersion: latest,
         minSupportedVersion: minSup,
-        downloadUrl:         data['download_url'] as String,
-        releaseNotes:        data['release_notes'] as String? ?? '',
-        isForced:            forced,
+        downloadUrl: data['download_url'] as String,
+        releaseNotes: data['release_notes'] as String? ?? '',
+        isForced: forced,
       );
     } catch (_) {
       return null;
@@ -76,8 +76,8 @@ class UpdateService {
       File? apkFile;
       try {
         // 保存先 (アプリ専用 external storage / FileProvider 経由でアクセス可能)
-        final dir = await getExternalStorageDirectory()
-            ?? await getApplicationDocumentsDirectory();
+        final dir = await getExternalStorageDirectory() ??
+            await getApplicationDocumentsDirectory();
         apkFile = File('${dir.path}/attendance-update.apk');
         if (await apkFile.exists()) await apkFile.delete();
 
@@ -129,12 +129,11 @@ class UpdateService {
         final detail = '${e.message ?? e.type.name}'
             '${e.response != null ? " (HTTP ${e.response!.statusCode})" : ""}';
         controller.add(UpdateProgress(
-            error: DebugProvider.verbose
-                ? 'ダウンロード失敗: $detail'
-                : 'ダウンロードに失敗しました'));
+            error:
+                DebugProvider.verbose ? 'ダウンロード失敗: $detail' : 'ダウンロードに失敗しました'));
       } catch (e) {
-        controller.add(UpdateProgress(
-            error: DebugProvider.verbose ? '$e' : '更新に失敗しました'));
+        controller.add(
+            UpdateProgress(error: DebugProvider.verbose ? '$e' : '更新に失敗しました'));
       } finally {
         await controller.close();
       }
@@ -146,7 +145,7 @@ class UpdateService {
   static int _compare(String a, String b) {
     final ap = _parts(a);
     final bp = _parts(b);
-    final n  = ap.length > bp.length ? ap.length : bp.length;
+    final n = ap.length > bp.length ? ap.length : bp.length;
     for (int i = 0; i < n; i++) {
       final av = i < ap.length ? ap[i] : 0;
       final bv = i < bp.length ? bp[i] : 0;

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../config/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../models/event.dart';
 import '../providers/attendance_provider.dart';
@@ -8,6 +10,7 @@ import 'status_chip.dart';
 class EventCard extends StatefulWidget {
   final EventModel event;
   final VoidCallback? onTap;
+
   /// true なら 出席/部分/欠席 ボタンをカード内に直接表示 (ホーム画面用)
   final bool showQuickActions;
   const EventCard({
@@ -24,19 +27,16 @@ class EventCard extends StatefulWidget {
 class _EventCardState extends State<EventCard> {
   bool _saving = false;
 
-  Color _borderColor(String status) => switch (status) {
-        'present' => Colors.green,
-        'partial' => Colors.orange,
-        _         => Colors.red.shade200,
-      };
+  /// 未回答を欠席の赤にしない (DESIGN.md ドメインの約束)
+  Color _borderColor(String status) => context.appColors.fgFor(status);
 
   Future<void> _setStatus(String status) async {
     setState(() => _saving = true);
     final err = await context.read<AttendanceProvider>().update(
-      eventId: widget.event.id,
-      status: status,
-      comment: widget.event.myComment,
-    );
+          eventId: widget.event.id,
+          status: status,
+          comment: widget.event.myComment,
+        );
     if (!mounted) return;
     setState(() => _saving = false);
     if (err == null) {
@@ -58,13 +58,14 @@ class _EventCardState extends State<EventCard> {
   String _label(String s) => switch (s) {
         'present' => '出席',
         'partial' => '部分参加',
-        _         => '欠席',
+        _ => '欠席',
       };
 
   @override
   Widget build(BuildContext context) {
     final ev = widget.event;
     final theme = Theme.of(context);
+    final c = context.appColors;
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -94,24 +95,30 @@ class _EventCardState extends State<EventCard> {
                         const SizedBox(width: 4),
                         Text('${ev.startTime} – ${ev.endTime}',
                             style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 14,
                                 color: theme.colorScheme.onSurfaceVariant)),
                       ]),
                       if (ev.myComment != null && ev.myComment!.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Text('💬 ${ev.myComment}',
                             style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 14,
                                 color: theme.colorScheme.onSurfaceVariant)),
                       ],
                       if (ev.summary.total > 0) ...[
                         const SizedBox(height: 6),
                         Row(children: [
-                          _MiniCount(Icons.check, Colors.green, ev.summary.present),
+                          _MiniCount(statusIcon('present'), c.presentFg,
+                              ev.summary.present),
                           const SizedBox(width: 6),
-                          _MiniCount(Icons.schedule, Colors.orange, ev.summary.partial),
+                          _MiniCount(statusIcon('partial'), c.partialFg,
+                              ev.summary.partial),
                           const SizedBox(width: 6),
-                          _MiniCount(Icons.close, Colors.red.shade300, ev.summary.absent),
+                          _MiniCount(statusIcon('absent'), c.absentFg,
+                              ev.summary.absent),
+                          const SizedBox(width: 6),
+                          _MiniCount(statusIcon('unanswered'), c.unansweredFg,
+                              ev.summary.unanswered),
                         ]),
                       ],
                     ],
@@ -148,7 +155,7 @@ class _MiniCount extends StatelessWidget {
       const SizedBox(width: 2),
       Text('$count',
           style: TextStyle(
-              fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+              fontSize: 14, color: color, fontWeight: FontWeight.w600)),
     ]);
   }
 }

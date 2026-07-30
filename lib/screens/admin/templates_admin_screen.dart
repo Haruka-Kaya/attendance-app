@@ -82,14 +82,13 @@ class _TemplatesAdminScreenState extends State<TemplatesAdminScreen>
                             radius: 18,
                             child: Text(_dayNames[dow],
                                 style: const TextStyle(
-                                    color: Colors.white, fontSize: 13)),
+                                    color: Colors.white, fontSize: 14)),
                           ),
                           title: Text(t['title'] ?? '',
                               style: const TextStyle(
-                                  fontWeight: FontWeight.w600, fontSize: 13)),
-                          subtitle: Text(
-                              '${t['start_time']}–${t['end_time']}',
-                              style: const TextStyle(fontSize: 11)),
+                                  fontWeight: FontWeight.w600, fontSize: 14)),
+                          subtitle: Text('${t['start_time']}–${t['end_time']}',
+                              style: const TextStyle(fontSize: 14)),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -100,10 +99,12 @@ class _TemplatesAdminScreenState extends State<TemplatesAdminScreen>
                                       size: 16, color: Colors.green),
                                 ),
                               IconButton(
+                                tooltip: '編集',
                                 icon: const Icon(Icons.edit, size: 18),
                                 onPressed: () => _showForm(context, t),
                               ),
                               IconButton(
+                                tooltip: '削除',
                                 icon: Icon(Icons.delete,
                                     size: 18, color: Colors.red.shade400),
                                 onPressed: () => _delete(context, t),
@@ -119,8 +120,13 @@ class _TemplatesAdminScreenState extends State<TemplatesAdminScreen>
 
   Color _dayColor(int dow) {
     const colors = [
-      Colors.blue, Colors.indigo, Colors.teal,
-      Colors.green, Colors.orange, Colors.pink, Colors.red,
+      Colors.blue,
+      Colors.indigo,
+      Colors.teal,
+      Colors.green,
+      Colors.orange,
+      Colors.pink,
+      Colors.red,
     ];
     return colors[dow % colors.length];
   }
@@ -137,8 +143,7 @@ class _TemplatesAdminScreenState extends State<TemplatesAdminScreen>
               child: const Text('キャンセル')),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text('削除',
-                  style: TextStyle(color: Colors.red.shade600))),
+              child: Text('削除', style: TextStyle(color: Colors.red.shade600))),
         ],
       ),
     );
@@ -199,13 +204,13 @@ class _GenerateDialogState extends State<_GenerateDialog> {
           _start.toIso8601String().substring(0, 10), _weeks);
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$count 件の活動を生成しました')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$count 件の活動を生成しました')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(e.toString()), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
       }
     } finally {
       setState(() => _loading = false);
@@ -231,7 +236,9 @@ class _GenerateDialogState extends State<_GenerateDialog> {
             Expanded(
               child: Slider(
                 value: _weeks.toDouble(),
-                min: 1, max: 12, divisions: 11,
+                min: 1,
+                max: 12,
+                divisions: 11,
                 label: '$_weeks 週',
                 onChanged: (v) => setState(() => _weeks = v.round()),
               ),
@@ -248,7 +255,8 @@ class _GenerateDialogState extends State<_GenerateDialog> {
           onPressed: _loading ? null : _generate,
           child: _loading
               ? const SizedBox(
-                  width: 16, height: 16,
+                  width: 16,
+                  height: 16,
                   child: CircularProgressIndicator(
                       strokeWidth: 2, color: Colors.white))
               : const Text('生成'),
@@ -267,11 +275,11 @@ class _TemplateForm extends StatefulWidget {
 }
 
 class _TemplateFormState extends State<_TemplateForm> {
-  final _formKey  = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   final _titleCtl = TextEditingController();
   final _startCtl = TextEditingController();
-  final _endCtl   = TextEditingController();
-  int _dow    = 0;
+  final _endCtl = TextEditingController();
+  int _dow = 0;
   bool _isAuto = false;
   bool _saving = false;
 
@@ -282,8 +290,8 @@ class _TemplateFormState extends State<_TemplateForm> {
     if (t != null) {
       _titleCtl.text = t['title'] ?? '';
       _startCtl.text = t['start_time'] ?? '';
-      _endCtl.text   = t['end_time'] ?? '';
-      _dow    = t['day_of_week'] as int? ?? 0;
+      _endCtl.text = t['end_time'] ?? '';
+      _dow = t['day_of_week'] as int? ?? 0;
       _isAuto = t['is_auto'] as bool? ?? false;
     }
   }
@@ -300,11 +308,11 @@ class _TemplateFormState extends State<_TemplateForm> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     final data = {
-      'title':       _titleCtl.text.trim(),
+      'title': _titleCtl.text.trim(),
       'day_of_week': _dow,
-      'start_time':  _startCtl.text.trim(),
-      'end_time':    _endCtl.text.trim(),
-      'is_auto':     _isAuto,
+      'start_time': _startCtl.text.trim(),
+      'end_time': _endCtl.text.trim(),
+      'is_auto': _isAuto,
     };
     try {
       if (widget.template == null) {
@@ -317,8 +325,8 @@ class _TemplateFormState extends State<_TemplateForm> {
     } catch (e) {
       setState(() => _saving = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(e.toString()), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
       }
     }
   }
@@ -335,15 +343,16 @@ class _TemplateFormState extends State<_TemplateForm> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(widget.template == null ? 'テンプレート追加' : 'テンプレート編集',
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 16)),
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 12),
             TextFormField(
               controller: _titleCtl,
               decoration: const InputDecoration(
-                  labelText: 'タイトル', border: OutlineInputBorder(), isDense: true),
-              validator: (v) =>
-                  (v == null || v.isEmpty) ? '入力してください' : null,
+                  labelText: 'タイトル',
+                  border: OutlineInputBorder(),
+                  isDense: true),
+              validator: (v) => (v == null || v.isEmpty) ? '入力してください' : null,
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<int>(
@@ -363,8 +372,10 @@ class _TemplateFormState extends State<_TemplateForm> {
                 child: TextFormField(
                   controller: _startCtl,
                   decoration: const InputDecoration(
-                      labelText: '開始', hintText: '15:00',
-                      border: OutlineInputBorder(), isDense: true),
+                      labelText: '開始',
+                      hintText: '15:00',
+                      border: OutlineInputBorder(),
+                      isDense: true),
                   validator: (v) =>
                       (v == null || v.isEmpty) ? '入力してください' : null,
                 ),
@@ -374,8 +385,10 @@ class _TemplateFormState extends State<_TemplateForm> {
                 child: TextFormField(
                   controller: _endCtl,
                   decoration: const InputDecoration(
-                      labelText: '終了', hintText: '17:00',
-                      border: OutlineInputBorder(), isDense: true),
+                      labelText: '終了',
+                      hintText: '17:00',
+                      border: OutlineInputBorder(),
+                      isDense: true),
                   validator: (v) =>
                       (v == null || v.isEmpty) ? '入力してください' : null,
                 ),
@@ -385,9 +398,9 @@ class _TemplateFormState extends State<_TemplateForm> {
             SwitchListTile(
               value: _isAuto,
               onChanged: (v) => setState(() => _isAuto = v),
-              title: const Text('自動生成ON', style: TextStyle(fontSize: 13)),
+              title: const Text('自動生成ON', style: TextStyle(fontSize: 14)),
               subtitle: const Text('ダッシュボード表示時に自動で活動を作成',
-                  style: TextStyle(fontSize: 11)),
+                  style: TextStyle(fontSize: 14)),
               contentPadding: EdgeInsets.zero,
             ),
             const SizedBox(height: 8),
@@ -395,7 +408,8 @@ class _TemplateFormState extends State<_TemplateForm> {
               onPressed: _saving ? null : _save,
               child: _saving
                   ? const SizedBox(
-                      width: 18, height: 18,
+                      width: 18,
+                      height: 18,
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Text('保存'),
