@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-
-import '../config/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../models/event.dart';
 import '../providers/attendance_provider.dart';
 import '../providers/event_provider.dart';
+import '../providers/language_provider.dart';
 import 'status_chip.dart';
+import '../config/app_theme.dart';
 
 class EventCard extends StatefulWidget {
   final EventModel event;
   final VoidCallback? onTap;
-
   /// true なら 出席/部分/欠席 ボタンをカード内に直接表示 (ホーム画面用)
   final bool showQuickActions;
   const EventCard({
@@ -33,17 +32,17 @@ class _EventCardState extends State<EventCard> {
   Future<void> _setStatus(String status) async {
     setState(() => _saving = true);
     final err = await context.read<AttendanceProvider>().update(
-          eventId: widget.event.id,
-          status: status,
-          comment: widget.event.myComment,
-        );
+      eventId: widget.event.id,
+      status: status,
+      comment: widget.event.myComment,
+    );
     if (!mounted) return;
     setState(() => _saving = false);
     if (err == null) {
       widget.event.myStatus = status;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${widget.event.title}: ${_label(status)}'),
+          content: Text('${widget.event.title}: ${_label(context, status)}'),
           duration: const Duration(seconds: 1),
           behavior: SnackBarBehavior.floating,
         ),
@@ -55,17 +54,20 @@ class _EventCardState extends State<EventCard> {
     }
   }
 
-  String _label(String s) => switch (s) {
-        'present' => '出席',
-        'partial' => '部分参加',
-        _ => '欠席',
-      };
+  String _label(BuildContext context, String s) {
+    final lang = context.read<LanguageProvider>();
+    return switch (s) {
+      'present' => lang.t('status.present'),
+      'partial' => lang.t('status.partial'),
+      _         => lang.t('status.absent'),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
     final ev = widget.event;
-    final theme = Theme.of(context);
     final c = context.appColors;
+    final theme = Theme.of(context);
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -151,7 +153,7 @@ class _MiniCount extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(icon, size: 11, color: color),
+      Icon(icon, size: 14, color: color),
       const SizedBox(width: 2),
       Text('$count',
           style: TextStyle(

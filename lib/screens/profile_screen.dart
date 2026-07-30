@@ -43,10 +43,9 @@ class ProfileScreen extends StatelessWidget {
       // 最新版
       final pkg = await PackageInfo.fromPlatform();
       if (!context.mounted) return;
+      final langProv = context.read<LanguageProvider>();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(lang == 'en'
-            ? 'You are on the latest version (v${pkg.version})'
-            : '最新バージョンです (v${pkg.version})'),
+        content: Text('${langProv.t('prof.latest_version')} (v${pkg.version})'),
         behavior: SnackBarBehavior.floating,
       ));
     }
@@ -54,11 +53,11 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
+    final auth  = context.watch<AuthProvider>();
     final theme = context.watch<ThemeProvider>();
-    final lang = context.watch<LanguageProvider>();
-    final dbg = context.watch<DebugProvider>();
-    final user = auth.user;
+    final lang  = context.watch<LanguageProvider>();
+    final dbg   = context.watch<DebugProvider>();
+    final user  = auth.user;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -69,7 +68,8 @@ class ProfileScreen extends StatelessWidget {
       ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
-            16, 8, 16, MediaQuery.of(context).padding.bottom + 80),
+            16, 8, 16,
+            MediaQuery.of(context).padding.bottom + 80),
         children: [
           // ユーザー情報
           Card(
@@ -90,11 +90,9 @@ class ProfileScreen extends StatelessWidget {
                       style: const TextStyle(
                           fontWeight: FontWeight.bold, fontSize: 16)),
                   Text(user?.email ?? '',
-                      style:
-                          TextStyle(color: Colors.grey.shade600, fontSize: 14)),
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
                   Text(user?.teamLabel ?? '',
-                      style:
-                          TextStyle(color: Colors.grey.shade500, fontSize: 14)),
+                      style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
                 ]),
               ]),
             ),
@@ -112,10 +110,8 @@ class ProfileScreen extends StatelessWidget {
                   value: lang.lang,
                   underline: const SizedBox(),
                   items: [
-                    DropdownMenuItem(
-                        value: 'ja', child: Text(lang.t('prof.language_ja'))),
-                    DropdownMenuItem(
-                        value: 'en', child: Text(lang.t('prof.language_en'))),
+                    DropdownMenuItem(value: 'ja', child: Text(lang.t('prof.language_ja'))),
+                    DropdownMenuItem(value: 'en', child: Text(lang.t('prof.language_en'))),
                   ],
                   onChanged: (v) {
                     if (v != null) lang.setLang(v);
@@ -131,15 +127,9 @@ class ProfileScreen extends StatelessWidget {
                   value: theme.mode,
                   underline: const SizedBox(),
                   items: [
-                    DropdownMenuItem(
-                        value: ThemeMode.system,
-                        child: Text(lang.t('prof.theme_system'))),
-                    DropdownMenuItem(
-                        value: ThemeMode.light,
-                        child: Text(lang.t('prof.theme_light'))),
-                    DropdownMenuItem(
-                        value: ThemeMode.dark,
-                        child: Text(lang.t('prof.theme_dark'))),
+                    DropdownMenuItem(value: ThemeMode.system, child: Text(lang.t('prof.theme_system'))),
+                    DropdownMenuItem(value: ThemeMode.light,  child: Text(lang.t('prof.theme_light'))),
+                    DropdownMenuItem(value: ThemeMode.dark,   child: Text(lang.t('prof.theme_dark'))),
                   ],
                   onChanged: (m) {
                     if (m != null) theme.setMode(m);
@@ -150,8 +140,7 @@ class ProfileScreen extends StatelessWidget {
               // アップデート確認 (Android: OTA / iOS: TestFlight 誘導)
               ListTile(
                 leading: const Icon(Icons.system_update_alt),
-                title:
-                    Text(lang.lang == 'en' ? 'Check for update' : 'アップデートを確認'),
+                title: Text(lang.t('prof.check_update')),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _checkUpdate(context, lang.lang),
               ),
@@ -175,22 +164,17 @@ class ProfileScreen extends StatelessWidget {
           Card(
             child: ExpansionTile(
               leading: const Icon(Icons.tune),
-              title: Text(lang.lang == 'en' ? 'Advanced' : '詳細設定'),
+              title: Text(lang.t('prof.advanced')),
               subtitle: Text(
-                lang.lang == 'en'
-                    ? 'Developer / troubleshooting'
-                    : '開発者・トラブルシュート用',
+                lang.t('prof.advanced_msg'),
                 style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
               ),
               children: [
                 SwitchListTile(
                   secondary: const Icon(Icons.bug_report_outlined),
-                  title: Text(
-                      lang.lang == 'en' ? 'Verbose error messages' : '詳細エラー表示'),
+                  title: Text(lang.t('prof.verbose_errors')),
                   subtitle: Text(
-                    lang.lang == 'en'
-                        ? 'Show HTTP codes, exception types, etc.'
-                        : 'HTTP コードや例外型などを表示',
+                    lang.t('prof.verbose_errors_msg'),
                     style: const TextStyle(fontSize: 14),
                   ),
                   value: dbg.verboseErrors,

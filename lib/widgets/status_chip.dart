@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../config/app_theme.dart';
+import '../providers/language_provider.dart';
 
 /// 出欠ステータスの表示と選択。
 ///
@@ -10,17 +11,18 @@ import '../config/app_theme.dart';
 /// 4状態のペア間 3:1 は原理的に達成できない（DESIGN.md §2.3 の証明）ため、
 /// **色だけに頼らせない。アイコン形状とテキストラベルを必ず併記する** (SC 1.4.1)。
 
-const _labels = {
-  'present': '出席',
-  'partial': '部分参加',
-  'absent': '欠席',
-  'unanswered': '未回答',
-};
-
-/// 未知の値は未回答として扱う。**欠席に落とさないこと** —
-/// 以前は `_ => 欠席` にしていたため、まだ出欠を出していない部員が
-/// 欠席として表示されていた。
-String statusLabel(String status) => _labels[status] ?? _labels['unanswered']!;
+/// ステータスのラベル。未知の値は未回答として扱う。
+/// **欠席に落とさないこと** — 以前は `_ => 欠席` にしていたため、
+/// まだ出欠を出していない部員が欠席として表示されていた。
+String statusLabel(BuildContext context, String status) {
+  final lang = context.t;
+  return switch (status) {
+    'present' => lang('status.present'),
+    'partial' => lang('status.partial'),
+    'absent' => lang('status.absent'),
+    _ => lang('status.unanswered'),
+  };
+}
 
 class StatusChip extends StatelessWidget {
   final String status;
@@ -35,7 +37,7 @@ class StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    final label = statusLabel(status);
+    final label = statusLabel(context, status);
     return Container(
       padding: EdgeInsets.symmetric(
           horizontal: compact ? 8 : 10, vertical: compact ? 2 : 4),
@@ -93,11 +95,16 @@ class StatusActionButtons extends StatelessWidget {
         ),
       );
     }
+    final lang = context.t;
     return Row(children: [
       for (final s in const ['present', 'partial', 'absent']) ...[
         if (s != 'present') const SizedBox(width: 6),
         Expanded(
           child: _StatusBtn(
+            // 「部分参加」は幅を食うので、ボタン列では短い表記を使う。
+            label: s == 'partial'
+                ? lang('status.partial_short')
+                : statusLabel(context, s),
             value: s,
             selected: selected,
             onTap: () => onSelected(s),
@@ -110,10 +117,11 @@ class StatusActionButtons extends StatelessWidget {
 }
 
 class _StatusBtn extends StatelessWidget {
-  final String value, selected;
+  final String label, value, selected;
   final VoidCallback onTap;
   final double height;
   const _StatusBtn({
+    required this.label,
     required this.value,
     required this.selected,
     required this.onTap,
@@ -131,7 +139,7 @@ class _StatusBtn extends StatelessWidget {
       child: TextButton.icon(
         onPressed: onTap,
         icon: Icon(statusIcon(value), size: 16, color: on ? Colors.white : fg),
-        label: Text(statusLabel(value),
+        label: Text(label,
             style: TextStyle(
               fontSize: 14,
               height: 1.0,
@@ -164,7 +172,7 @@ class StatusSelector extends StatelessWidget {
         for (final s in const ['present', 'partial', 'absent'])
           ButtonSegment(
             value: s,
-            label: Text(statusLabel(s)),
+            label: Text(statusLabel(context, s)),
             icon: Icon(statusIcon(s), size: 16),
           ),
       ],

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-
-import '../../config/app_theme.dart';
-import '../../widgets/status_chip.dart';
+import 'package:provider/provider.dart';
+import '../../providers/language_provider.dart';
 import '../../services/api_service.dart';
 import '../../widgets/status_chip.dart';
+import '../../config/app_theme.dart';
 
 class AttendanceAdminScreen extends StatefulWidget {
   const AttendanceAdminScreen({super.key});
@@ -32,23 +32,17 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
   }
 
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _dirty = false;
-    });
+    setState(() { _loading = true; _dirty = false; });
     try {
       final dateStr = _date.toIso8601String().substring(0, 10);
       final data = await ApiService.getAttendanceByDate(dateStr);
-      final users =
-          List<Map<String, dynamic>>.from(data['users'] as List? ?? []);
-      final events =
-          List<Map<String, dynamic>>.from(data['events'] as List? ?? []);
+      final users  = List<Map<String, dynamic>>.from(data['users']  as List? ?? []);
+      final events = List<Map<String, dynamic>>.from(data['events'] as List? ?? []);
       setState(() {
         _data = data;
         // 初期ステータスを取得
         _edited = users.map((u) {
-          final ueList =
-              List<Map<String, dynamic>>.from(u['events'] as List? ?? []);
+          final ueList = List<Map<String, dynamic>>.from(u['events'] as List? ?? []);
           return events.map((ev) {
             final match = ueList.firstWhere(
               (ue) => ue['event_id'] == ev['id'],
@@ -61,8 +55,8 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('エラー: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('エラー: $e'), backgroundColor: Colors.red));
       }
     } finally {
       setState(() => _loading = false);
@@ -70,19 +64,18 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
   }
 
   Future<void> _save() async {
-    final data = _data;
+    final data    = _data;
     if (data == null) return;
-    final users = List<Map<String, dynamic>>.from(data['users'] as List? ?? []);
-    final events =
-        List<Map<String, dynamic>>.from(data['events'] as List? ?? []);
+    final users  = List<Map<String, dynamic>>.from(data['users']  as List? ?? []);
+    final events = List<Map<String, dynamic>>.from(data['events'] as List? ?? []);
 
     final items = <Map<String, dynamic>>[];
     for (int i = 0; i < users.length; i++) {
       for (int j = 0; j < events.length; j++) {
         items.add({
-          'user_id': users[i]['id'],
+          'user_id':  users[i]['id'],
           'event_id': events[j]['id'],
-          'status': _edited[i][j],
+          'status':   _edited[i][j],
         });
       }
     }
@@ -91,13 +84,15 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
       await ApiService.bulkUpdateAttendance(items);
       setState(() => _dirty = false);
       if (mounted) {
+        final lang = context.read<LanguageProvider>();
         ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('保存しました')));
+            .showSnackBar(SnackBar(content: Text(lang.t('admin.saved'))));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('保存失敗: $e'), backgroundColor: Colors.red));
+        final lang = context.read<LanguageProvider>();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('${lang.t('admin.save_failed')}: $e'), backgroundColor: Colors.red));
       }
     }
   }
@@ -110,10 +105,7 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
       lastDate: DateTime(2030),
     );
     if (d != null) {
-      setState(() {
-        _date = d;
-        _data = null;
-      });
+      setState(() { _date = d; _data = null; });
       await _load();
     }
   }
@@ -121,10 +113,11 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final events =
-        List<Map<String, dynamic>>.from(_data?['events'] as List? ?? []);
-    final users =
-        List<Map<String, dynamic>>.from(_data?['users'] as List? ?? []);
+    final lang = context.watch<LanguageProvider>();
+    final events = List<Map<String, dynamic>>.from(
+        _data?['events'] as List? ?? []);
+    final users  = List<Map<String, dynamic>>.from(
+        _data?['users']  as List? ?? []);
 
     return Scaffold(
       body: Column(
@@ -142,7 +135,7 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
               ),
               const SizedBox(width: 8),
               IconButton(
-                  tooltip: '再読み込み',
+                  tooltip: lang.t('common.refresh'),
                   icon: const Icon(Icons.refresh),
                   onPressed: _load),
             ]),
@@ -157,7 +150,7 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
                 child: FilledButton.icon(
                   onPressed: _save,
                   icon: const Icon(Icons.save, size: 16),
-                  label: const Text('変更を保存'),
+                  label: Text(lang.t('admin.save_changes')),
                 ),
               ),
             ),
@@ -167,9 +160,9 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : events.isEmpty
-                    ? const Center(child: Text('この日の活動はありません'))
+                    ? Center(child: Text(lang.t('admin.no_events_day')))
                     : users.isEmpty
-                        ? const Center(child: Text('ユーザーがいません'))
+                        ? Center(child: Text(lang.t('admin.no_users')))
                         : _buildTable(users, events),
           ),
         ],
@@ -178,7 +171,9 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
   }
 
   Widget _buildTable(
-      List<Map<String, dynamic>> users, List<Map<String, dynamic>> events) {
+      List<Map<String, dynamic>> users,
+      List<Map<String, dynamic>> events) {
+    final lang = context.read<LanguageProvider>();
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SingleChildScrollView(
@@ -187,7 +182,7 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
           headingRowColor: WidgetStateProperty.all(
               Theme.of(context).colorScheme.primaryContainer),
           columns: [
-            const DataColumn(label: Text('名前', style: TextStyle(fontSize: 14))),
+            DataColumn(label: Text(lang.t('admin.name'), style: const TextStyle(fontSize: 14))),
             for (final ev in events)
               DataColumn(
                 label: SizedBox(
@@ -202,8 +197,8 @@ class _AttendanceAdminScreenState extends State<AttendanceAdminScreen>
           rows: List.generate(users.length, (i) {
             final u = users[i];
             return DataRow(cells: [
-              DataCell(
-                  Text(u['name'] ?? '', style: const TextStyle(fontSize: 14))),
+              DataCell(Text(u['name'] ?? '',
+                  style: const TextStyle(fontSize: 14))),
               for (int j = 0; j < events.length; j++)
                 DataCell(
                   _StatusDropdown(
@@ -235,6 +230,7 @@ class _StatusDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     final c = context.appColors;
     return DropdownButtonHideUnderline(
       child: DropdownButton<String>(
@@ -246,13 +242,16 @@ class _StatusDropdown extends StatelessWidget {
           DropdownMenuItem(
             value: 'unanswered',
             enabled: false,
-            child: Text('未回答',
+            child: Text(lang.t('status.unanswered'),
                 style: TextStyle(fontSize: 14, color: c.unansweredFg)),
           ),
           for (final s in const ['present', 'partial', 'absent'])
             DropdownMenuItem(
               value: s,
-              child: Text(statusLabel(s),
+              child: Text(
+                  s == 'partial'
+                      ? lang.t('status.partial_short')
+                      : statusLabel(context, s),
                   style: TextStyle(fontSize: 14, color: c.fgFor(s))),
             ),
         ],

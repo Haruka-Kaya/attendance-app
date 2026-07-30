@@ -4,25 +4,14 @@ import 'package:dio/dio.dart';
 import '../config/api_config.dart';
 import '../providers/auth_provider.dart';
 import '../providers/debug_provider.dart';
+import '../providers/language_provider.dart';
 import '../services/api_service.dart';
 
 // M=中学 / H=高校 / G=グローバル高校 / ID=ID学園 / OB=卒業生。
 // サーバー側 app.py の GRADE_OPTIONS と必ず一致させること。
 const _gradeOptions = [
-  'M1',
-  'M2',
-  'M3',
-  'H1',
-  'H2',
-  'H3',
-  'H4',
-  'G1',
-  'G2',
-  'G3',
-  'ID1',
-  'ID2',
-  'ID3',
-  'OB',
+  'M1', 'M2', 'M3', 'H1', 'H2', 'H3', 'H4',
+  'G1', 'G2', 'G3', 'ID1', 'ID2', 'ID3', 'OB',
 ];
 
 class OnboardingScreen extends StatefulWidget {
@@ -32,8 +21,8 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _newPwCtl = TextEditingController();
+  final _formKey   = GlobalKey<FormState>();
+  final _newPwCtl  = TextEditingController();
   final _confPwCtl = TextEditingController();
   final _discordCtl = TextEditingController();
   String? _grade;
@@ -68,12 +57,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final token = await SecureStorage.getAccessToken();
     final body = <String, dynamic>{
       'new_password': _newPwCtl.text,
-      'grade': _grade,
-      'positions': _positions.toList(),
-      'birthday': _birthday == null
-          ? null
-          : _birthday!.toIso8601String().substring(0, 10),
-      'discord_id': _discordCtl.text.trim(),
+      'grade':        _grade,
+      'positions':    _positions.toList(),
+      'birthday':     _birthday == null ? null : _birthday!.toIso8601String().substring(0, 10),
+      'discord_id':   _discordCtl.text.trim(),
     };
     try {
       await dio.post(
@@ -84,15 +71,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       // 完了後 user を再取得して must_change_password=false を反映
       await context.read<AuthProvider>().refreshUser();
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('セットアップ完了！')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.read<LanguageProvider>().t('onboarding.complete'))));
     } on DioException catch (e) {
       final serverErr = (e.response?.data as Map?)?['error']?.toString();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(DebugProvider.verbose
               ? '${e.response?.statusCode}: ${serverErr ?? e.message}'
-              : (serverErr ?? '保存に失敗しました')),
+              : (serverErr ?? context.read<LanguageProvider>().t('onboarding.save_failed'))),
           backgroundColor: Colors.red,
         ));
       }
@@ -103,9 +90,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('初回セットアップ'),
+        title: Text(lang.t('onboarding.title')),
         automaticallyImplyLeading: false,
       ),
       body: SafeArea(
@@ -120,37 +108,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   Card(
                     color: Theme.of(context).colorScheme.primaryContainer,
-                    child: const Padding(
-                      padding: EdgeInsets.all(12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
                       child: Text(
-                        'ようこそ！パスワードを設定し、プロフィール情報を入力してください。',
-                        style: TextStyle(fontSize: 14),
+                        lang.t('onboarding.welcome'),
+                        style: const TextStyle(fontSize: 14),
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
 
                   // ── パスワード ──
-                  const Text('パスワード *',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(lang.t('onboarding.password_label'),
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _newPwCtl,
                     obscureText: _obscure,
                     decoration: InputDecoration(
-                      labelText: '新しいパスワード',
+                      labelText: lang.t('auth.password_new'),
                       border: const OutlineInputBorder(),
                       isDense: true,
                       suffixIcon: IconButton(
-                        tooltip: 'パスワードの表示を切り替え',
-                        icon: Icon(
-                            _obscure ? Icons.visibility_off : Icons.visibility),
+                        tooltip: lang.t('auth.password_toggle'),
+                        icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                     ),
                     validator: (v) {
-                      if (v == null || v.isEmpty) return '入力してください';
-                      if (v.length < 8) return '8文字以上入力してください';
+                      if (v == null || v.isEmpty) return lang.t('common.required');
+                      if (v.length < 8) return lang.t('auth.password_min8');
                       return null;
                     },
                   ),
@@ -158,30 +145,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   TextFormField(
                     controller: _confPwCtl,
                     obscureText: _obscure,
-                    decoration: const InputDecoration(
-                      labelText: '確認',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: lang.t('onboarding.confirm'),
+                      border: const OutlineInputBorder(),
                       isDense: true,
                     ),
-                    validator: (v) =>
-                        v != _newPwCtl.text ? 'パスワードが一致しません' : null,
+                    validator: (v) => v != _newPwCtl.text ? lang.t('auth.password_mismatch') : null,
                   ),
                   const SizedBox(height: 24),
 
                   // ── プロフィール (任意) ──
-                  const Text('プロフィール (任意)',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(lang.t('onboarding.profile'),
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String?>(
                     value: _grade,
-                    decoration: const InputDecoration(
-                      labelText: '学年',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: lang.t('onboarding.grade'),
+                      border: const OutlineInputBorder(),
                       isDense: true,
                     ),
                     items: [
-                      const DropdownMenuItem<String?>(
-                          value: null, child: Text('未設定')),
+                      DropdownMenuItem<String?>(value: null, child: Text(lang.t('onboarding.grade_unset'))),
                       for (final g in _gradeOptions)
                         DropdownMenuItem<String?>(value: g, child: Text(g)),
                     ],
@@ -192,21 +177,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onPressed: _pickBirthday,
                     icon: const Icon(Icons.cake, size: 16),
                     label: Text(_birthday == null
-                        ? '誕生日を選択 (任意)'
-                        : '誕生日: ${_birthday!.toIso8601String().substring(0, 10)}'),
+                        ? lang.t('onboarding.birthday')
+                        : '${lang.t('onboarding.birthday_selected')} ${_birthday!.toIso8601String().substring(0, 10)}'),
                   ),
                   const SizedBox(height: 12),
-                  const Text('班', style: TextStyle(fontSize: 14)),
+                  Text(lang.t('onboarding.positions'), style: const TextStyle(fontSize: 14)),
                   Wrap(
                     spacing: 8,
                     children: [
-                      for (final (val, label) in [
-                        ('tech', '技術班'),
-                        ('ops', '運営班'),
-                        ('teacher', '顧問'),
+                      for (final (val, key) in [
+                        ('tech', 'onboarding.tech'),
+                        ('ops', 'onboarding.ops'),
+                        ('teacher', 'onboarding.teacher'),
                       ])
                         FilterChip(
-                          label: Text(label),
+                          label: Text(lang.t(key)),
                           selected: _positions.contains(val),
                           onSelected: (on) => setState(() {
                             on ? _positions.add(val) : _positions.remove(val);
@@ -218,20 +203,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   TextFormField(
                     controller: _discordCtl,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Discord ID (任意・ロール連携用)',
-                      hintText: '例: 123456789012345678',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: lang.t('onboarding.discord'),
+                      hintText: lang.t('onboarding.discord_hint'),
+                      border: const OutlineInputBorder(),
                       isDense: true,
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) return null;
-                      return RegExp(r'^\d+$').hasMatch(v) ? null : '数字のみで入力';
+                      return RegExp(r'^\d+$').hasMatch(v) ? null : lang.t('onboarding.digit_only');
                     },
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Discord → 設定 → 詳細設定 → 開発者モード ON → 自分の名前を右クリック → ユーザーIDをコピー',
+                    lang.t('onboarding.discord_help'),
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                   const SizedBox(height: 24),
@@ -240,7 +225,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     height: 48,
                     child: FilledButton.icon(
                       icon: const Icon(Icons.check),
-                      label: const Text('保存して開始'),
+                      label: Text(lang.t('onboarding.save')),
                       onPressed: _saving ? null : _submit,
                     ),
                   ),

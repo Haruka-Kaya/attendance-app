@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/language_provider.dart';
 import '../../services/api_service.dart';
 
-const _dayNames = ['月', '火', '水', '木', '金', '土', '日'];
+const _dayKeys = ['day.mon', 'day.tue', 'day.wed', 'day.thu', 'day.fri', 'day.sat', 'day.sun'];
+const _dayFullKeys = ['day.monday', 'day.tuesday', 'day.wednesday', 'day.thursday', 'day.friday', 'day.saturday', 'day.sunday'];
 
 class TemplatesAdminScreen extends StatefulWidget {
   const TemplatesAdminScreen({super.key});
@@ -42,6 +45,7 @@ class _TemplatesAdminScreenState extends State<TemplatesAdminScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final lang = context.watch<LanguageProvider>();
     return Scaffold(
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 72),
@@ -50,7 +54,7 @@ class _TemplatesAdminScreenState extends State<TemplatesAdminScreen>
           children: [
             FloatingActionButton.small(
               heroTag: 'generate',
-              tooltip: '活動生成',
+              tooltip: lang.t('admin.generate_tooltip'),
               onPressed: () => _showGenerateDialog(context),
               child: const Icon(Icons.auto_awesome),
             ),
@@ -68,7 +72,7 @@ class _TemplatesAdminScreenState extends State<TemplatesAdminScreen>
           : RefreshIndicator(
               onRefresh: _load,
               child: _templates.isEmpty
-                  ? const Center(child: Text('テンプレートがありません'))
+                  ? Center(child: Text(lang.t('admin.no_templates')))
                   : ListView.builder(
                       padding: const EdgeInsets.only(bottom: 100),
                       itemCount: _templates.length,
@@ -80,31 +84,32 @@ class _TemplatesAdminScreenState extends State<TemplatesAdminScreen>
                           leading: CircleAvatar(
                             backgroundColor: _dayColor(dow),
                             radius: 18,
-                            child: Text(_dayNames[dow],
+                            child: Text(lang.t(_dayKeys[dow]),
                                 style: const TextStyle(
                                     color: Colors.white, fontSize: 14)),
                           ),
                           title: Text(t['title'] ?? '',
                               style: const TextStyle(
                                   fontWeight: FontWeight.w600, fontSize: 14)),
-                          subtitle: Text('${t['start_time']}–${t['end_time']}',
+                          subtitle: Text(
+                              '${t['start_time']}–${t['end_time']}',
                               style: const TextStyle(fontSize: 14)),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (isAuto)
-                                const Tooltip(
-                                  message: '自動生成ON',
-                                  child: Icon(Icons.autorenew,
+                                Tooltip(
+                                  message: lang.t('admin.auto_generate'),
+                                  child: const Icon(Icons.autorenew,
                                       size: 16, color: Colors.green),
                                 ),
                               IconButton(
-                                tooltip: '編集',
+                                tooltip: lang.t('common.edit'),
                                 icon: const Icon(Icons.edit, size: 18),
                                 onPressed: () => _showForm(context, t),
                               ),
                               IconButton(
-                                tooltip: '削除',
+                                tooltip: lang.t('common.delete'),
                                 icon: Icon(Icons.delete,
                                     size: 18, color: Colors.red.shade400),
                                 onPressed: () => _delete(context, t),
@@ -120,30 +125,27 @@ class _TemplatesAdminScreenState extends State<TemplatesAdminScreen>
 
   Color _dayColor(int dow) {
     const colors = [
-      Colors.blue,
-      Colors.indigo,
-      Colors.teal,
-      Colors.green,
-      Colors.orange,
-      Colors.pink,
-      Colors.red,
+      Colors.blue, Colors.indigo, Colors.teal,
+      Colors.green, Colors.orange, Colors.pink, Colors.red,
     ];
     return colors[dow % colors.length];
   }
 
   Future<void> _delete(BuildContext context, Map<String, dynamic> t) async {
+    final lang = context.read<LanguageProvider>();
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('削除確認'),
-        content: Text('「${t['title']}」を削除しますか？'),
+        title: Text(lang.t('admin.delete_confirm')),
+        content: Text('「${t['title']}」${lang.t('admin.delete_ask')}'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('キャンセル')),
+              child: Text(lang.t('common.cancel'))),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text('削除', style: TextStyle(color: Colors.red.shade600))),
+              child: Text(lang.t('common.delete'),
+                  style: TextStyle(color: Colors.red.shade600))),
         ],
       ),
     );
@@ -199,18 +201,19 @@ class _GenerateDialogState extends State<_GenerateDialog> {
 
   Future<void> _generate() async {
     setState(() => _loading = true);
+    final lang = context.read<LanguageProvider>();
     try {
       final count = await ApiService.generateEvents(
           _start.toIso8601String().substring(0, 10), _weeks);
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$count 件の活動を生成しました')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$count ${lang.t('admin.generated_n')}')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e.toString()), backgroundColor: Colors.red));
       }
     } finally {
       setState(() => _loading = false);
@@ -219,8 +222,9 @@ class _GenerateDialogState extends State<_GenerateDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return AlertDialog(
-      title: const Text('活動一括生成'),
+      title: Text(lang.t('admin.generate_events')),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -231,35 +235,32 @@ class _GenerateDialogState extends State<_GenerateDialog> {
           ),
           const SizedBox(height: 12),
           Row(children: [
-            const Text('週数:'),
+            Text(lang.t('admin.weeks_label')),
             const SizedBox(width: 12),
             Expanded(
               child: Slider(
                 value: _weeks.toDouble(),
-                min: 1,
-                max: 12,
-                divisions: 11,
-                label: '$_weeks 週',
+                min: 1, max: 12, divisions: 11,
+                label: '$_weeks ${lang.t('admin.weeks')}',
                 onChanged: (v) => setState(() => _weeks = v.round()),
               ),
             ),
-            Text('$_weeks 週'),
+            Text('$_weeks ${lang.t('admin.weeks')}'),
           ]),
         ],
       ),
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('キャンセル')),
+            child: Text(lang.t('common.cancel'))),
         FilledButton(
           onPressed: _loading ? null : _generate,
           child: _loading
               ? const SizedBox(
-                  width: 16,
-                  height: 16,
+                  width: 16, height: 16,
                   child: CircularProgressIndicator(
                       strokeWidth: 2, color: Colors.white))
-              : const Text('生成'),
+              : Text(lang.t('admin.generate')),
         ),
       ],
     );
@@ -275,11 +276,11 @@ class _TemplateForm extends StatefulWidget {
 }
 
 class _TemplateFormState extends State<_TemplateForm> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey  = GlobalKey<FormState>();
   final _titleCtl = TextEditingController();
   final _startCtl = TextEditingController();
-  final _endCtl = TextEditingController();
-  int _dow = 0;
+  final _endCtl   = TextEditingController();
+  int _dow    = 0;
   bool _isAuto = false;
   bool _saving = false;
 
@@ -290,8 +291,8 @@ class _TemplateFormState extends State<_TemplateForm> {
     if (t != null) {
       _titleCtl.text = t['title'] ?? '';
       _startCtl.text = t['start_time'] ?? '';
-      _endCtl.text = t['end_time'] ?? '';
-      _dow = t['day_of_week'] as int? ?? 0;
+      _endCtl.text   = t['end_time'] ?? '';
+      _dow    = t['day_of_week'] as int? ?? 0;
       _isAuto = t['is_auto'] as bool? ?? false;
     }
   }
@@ -308,11 +309,11 @@ class _TemplateFormState extends State<_TemplateForm> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     final data = {
-      'title': _titleCtl.text.trim(),
+      'title':       _titleCtl.text.trim(),
       'day_of_week': _dow,
-      'start_time': _startCtl.text.trim(),
-      'end_time': _endCtl.text.trim(),
-      'is_auto': _isAuto,
+      'start_time':  _startCtl.text.trim(),
+      'end_time':    _endCtl.text.trim(),
+      'is_auto':     _isAuto,
     };
     try {
       if (widget.template == null) {
@@ -325,14 +326,15 @@ class _TemplateFormState extends State<_TemplateForm> {
     } catch (e) {
       setState(() => _saving = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e.toString()), backgroundColor: Colors.red));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return Padding(
       padding: EdgeInsets.fromLTRB(
           16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
@@ -342,28 +344,27 @@ class _TemplateFormState extends State<_TemplateForm> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(widget.template == null ? 'テンプレート追加' : 'テンプレート編集',
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(widget.template == null ? lang.t('admin.template_add') : lang.t('admin.template_edit'),
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 12),
             TextFormField(
               controller: _titleCtl,
-              decoration: const InputDecoration(
-                  labelText: 'タイトル',
-                  border: OutlineInputBorder(),
-                  isDense: true),
-              validator: (v) => (v == null || v.isEmpty) ? '入力してください' : null,
+              decoration: InputDecoration(
+                  labelText: lang.t('event.title'), border: const OutlineInputBorder(), isDense: true),
+              validator: (v) =>
+                  (v == null || v.isEmpty) ? lang.t('common.required') : null,
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<int>(
               value: _dow,
               isDense: true,
-              decoration: const InputDecoration(
-                  labelText: '曜日', border: OutlineInputBorder(), isDense: true),
+              decoration: InputDecoration(
+                  labelText: lang.t('admin.day_of_week'), border: const OutlineInputBorder(), isDense: true),
               items: List.generate(
                   7,
                   (i) => DropdownMenuItem(
-                      value: i, child: Text('${_dayNames[i]}曜日'))),
+                      value: i, child: Text(lang.t(_dayFullKeys[i])))),
               onChanged: (v) => setState(() => _dow = v!),
             ),
             const SizedBox(height: 8),
@@ -371,26 +372,22 @@ class _TemplateFormState extends State<_TemplateForm> {
               Expanded(
                 child: TextFormField(
                   controller: _startCtl,
-                  decoration: const InputDecoration(
-                      labelText: '開始',
-                      hintText: '15:00',
-                      border: OutlineInputBorder(),
-                      isDense: true),
+                  decoration: InputDecoration(
+                      labelText: lang.t('admin.start'), hintText: '15:00',
+                      border: const OutlineInputBorder(), isDense: true),
                   validator: (v) =>
-                      (v == null || v.isEmpty) ? '入力してください' : null,
+                      (v == null || v.isEmpty) ? lang.t('common.required') : null,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: TextFormField(
                   controller: _endCtl,
-                  decoration: const InputDecoration(
-                      labelText: '終了',
-                      hintText: '17:00',
-                      border: OutlineInputBorder(),
-                      isDense: true),
+                  decoration: InputDecoration(
+                      labelText: lang.t('admin.end'), hintText: '17:00',
+                      border: const OutlineInputBorder(), isDense: true),
                   validator: (v) =>
-                      (v == null || v.isEmpty) ? '入力してください' : null,
+                      (v == null || v.isEmpty) ? lang.t('common.required') : null,
                 ),
               ),
             ]),
@@ -398,9 +395,9 @@ class _TemplateFormState extends State<_TemplateForm> {
             SwitchListTile(
               value: _isAuto,
               onChanged: (v) => setState(() => _isAuto = v),
-              title: const Text('自動生成ON', style: TextStyle(fontSize: 14)),
-              subtitle: const Text('ダッシュボード表示時に自動で活動を作成',
-                  style: TextStyle(fontSize: 14)),
+              title: Text(lang.t('admin.auto_generate'), style: const TextStyle(fontSize: 14)),
+              subtitle: Text(lang.t('admin.auto_generate_msg'),
+                  style: const TextStyle(fontSize: 14)),
               contentPadding: EdgeInsets.zero,
             ),
             const SizedBox(height: 8),
@@ -408,11 +405,10 @@ class _TemplateFormState extends State<_TemplateForm> {
               onPressed: _saving ? null : _save,
               child: _saving
                   ? const SizedBox(
-                      width: 18,
-                      height: 18,
+                      width: 18, height: 18,
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
-                  : const Text('保存'),
+                  : Text(lang.t('common.save')),
             ),
           ],
         ),

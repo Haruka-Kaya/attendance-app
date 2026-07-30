@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/attendance_provider.dart';
+import '../providers/language_provider.dart';
 import '../models/attendance.dart';
 import '../widgets/status_chip.dart';
 import '../widgets/empty_state.dart';
@@ -31,30 +32,31 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen>
   Widget build(BuildContext context) {
     super.build(context);
     final prov = context.watch<AttendanceProvider>();
+    final lang = context.watch<LanguageProvider>();
     final records = _filtered(prov.records);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        title: const Text('出欠記録'),
+        title: Text(lang.t('nav.my_attendance')),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'all', label: Text('全て')),
-                ButtonSegment(value: 'present', label: Text('出席')),
-                ButtonSegment(value: 'partial', label: Text('部分参加')),
-                ButtonSegment(value: 'absent', label: Text('欠席')),
+              segments: [
+                ButtonSegment(value: 'all',     label: Text(lang.t('common.all'))),
+                ButtonSegment(value: 'present', label: Text(lang.t('status.present'))),
+                ButtonSegment(value: 'partial', label: Text(lang.t('status.partial'))),
+                ButtonSegment(value: 'absent',  label: Text(lang.t('status.absent'))),
               ],
               selected: {_filter},
               onSelectionChanged: (s) => setState(() => _filter = s.first),
               style: ButtonStyle(
                 visualDensity: VisualDensity.compact,
-                textStyle:
-                    WidgetStateProperty.all(const TextStyle(fontSize: 14)),
+                textStyle: WidgetStateProperty.all(
+                    const TextStyle(fontSize: 14)),
               ),
             ),
           ),
@@ -65,10 +67,10 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen>
           : RefreshIndicator(
               onRefresh: () => prov.load(),
               child: records.isEmpty
-                  ? const EmptyState(
+                  ? EmptyState(
                       icon: Icons.assignment_outlined,
-                      title: '記録がありません',
-                      message: '出欠が登録されるとここに表示されます',
+                      title: lang.t('att.no_records'),
+                      message: lang.t('att.no_records_msg'),
                     )
                   : ListView.separated(
                       padding: const EdgeInsets.symmetric(

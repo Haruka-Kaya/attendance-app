@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-
-import '../config/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../providers/event_provider.dart';
+import '../providers/language_provider.dart';
 import '../models/event.dart';
 import '../widgets/event_card.dart';
 import '../widgets/empty_state.dart';
 import 'event_detail_screen.dart';
+import '../config/app_theme.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -21,7 +21,7 @@ class _CalendarScreenState extends State<CalendarScreen>
   @override
   bool get wantKeepAlive => true;
 
-  DateTime _focused = DateTime.now();
+  DateTime _focused  = DateTime.now();
   DateTime? _selected;
 
   @override
@@ -32,11 +32,11 @@ class _CalendarScreenState extends State<CalendarScreen>
 
   void _loadMonth(DateTime month) {
     final start = DateTime(month.year, month.month, 1);
-    final end = DateTime(month.year, month.month + 1, 0);
+    final end   = DateTime(month.year, month.month + 1, 0);
     context.read<EventProvider>().loadAll(
-          start: '${start.toIso8601String().substring(0, 10)}',
-          end: '${end.toIso8601String().substring(0, 10)}',
-        );
+      start: '${start.toIso8601String().substring(0, 10)}',
+      end:   '${end.toIso8601String().substring(0, 10)}',
+    );
   }
 
   List<EventModel> _eventsFor(DateTime day) =>
@@ -46,7 +46,8 @@ class _CalendarScreenState extends State<CalendarScreen>
   Widget build(BuildContext context) {
     super.build(context);
     final eventProv = context.watch<EventProvider>();
-    final selected = _selected ?? _focused;
+    final lang      = context.watch<LanguageProvider>();
+    final selected  = _selected ?? _focused;
     final dayEvents = eventProv.eventsOnDay(selected);
 
     return Scaffold(
@@ -54,7 +55,7 @@ class _CalendarScreenState extends State<CalendarScreen>
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('カレンダー'),
+        title: Text(lang.t('nav.calendar')),
       ),
       body: Column(
         children: [
@@ -65,10 +66,8 @@ class _CalendarScreenState extends State<CalendarScreen>
             focusedDay: _focused,
             selectedDayPredicate: (d) => isSameDay(d, _selected),
             eventLoader: _eventsFor,
-            onDaySelected: (sel, foc) => setState(() {
-              _selected = sel;
-              _focused = foc;
-            }),
+            onDaySelected: (sel, foc) =>
+                setState(() { _selected = sel; _focused = foc; }),
             onPageChanged: (foc) {
               _focused = foc;
               _loadMonth(foc);
@@ -105,10 +104,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                       for (final c in colors.take(3))
                         Container(
                           margin: const EdgeInsets.symmetric(horizontal: 1),
-                          width: 6,
-                          height: 6,
-                          decoration:
-                              BoxDecoration(color: c, shape: BoxShape.circle),
+                          width: 6, height: 6,
+                          decoration: BoxDecoration(color: c, shape: BoxShape.circle),
                         ),
                     ],
                   ),
@@ -125,9 +122,9 @@ class _CalendarScreenState extends State<CalendarScreen>
             child: eventProv.loading
                 ? const Center(child: CircularProgressIndicator())
                 : dayEvents.isEmpty
-                    ? const EmptyState(
+                    ? EmptyState(
                         icon: Icons.event_available_outlined,
-                        title: 'この日の活動はありません',
+                        title: lang.t('event.no_event_day'),
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.only(top: 4, bottom: 12),

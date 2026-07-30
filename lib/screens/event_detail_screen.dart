@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-
-import '../config/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../models/event.dart';
 import '../providers/attendance_provider.dart';
+import '../providers/language_provider.dart';
 import '../widgets/status_chip.dart';
+import '../config/app_theme.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final EventModel event;
@@ -16,18 +16,18 @@ class EventDetailScreen extends StatefulWidget {
 
 class _EventDetailScreenState extends State<EventDetailScreen> {
   late String _status;
-  final _commentCtl = TextEditingController();
+  final _commentCtl      = TextEditingController();
   final _partialStartCtl = TextEditingController();
-  final _partialEndCtl = TextEditingController();
+  final _partialEndCtl   = TextEditingController();
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
     _status = widget.event.myStatus;
-    _commentCtl.text = widget.event.myComment ?? '';
+    _commentCtl.text      = widget.event.myComment ?? '';
     _partialStartCtl.text = widget.event.myPartialStart ?? '';
-    _partialEndCtl.text = widget.event.myPartialEnd ?? '';
+    _partialEndCtl.text   = widget.event.myPartialEnd ?? '';
   }
 
   @override
@@ -41,24 +41,24 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   Future<void> _save() async {
     setState(() => _saving = true);
     final err = await context.read<AttendanceProvider>().update(
-          eventId: widget.event.id,
-          status: _status,
-          comment: _commentCtl.text.isEmpty ? null : _commentCtl.text,
-          partialStart: _status == 'partial' && _partialStartCtl.text.isNotEmpty
-              ? _partialStartCtl.text
-              : null,
-          partialEnd: _status == 'partial' && _partialEndCtl.text.isNotEmpty
-              ? _partialEndCtl.text
-              : null,
-        );
+      eventId:      widget.event.id,
+      status:       _status,
+      comment:      _commentCtl.text.isEmpty ? null : _commentCtl.text,
+      partialStart: _status == 'partial' && _partialStartCtl.text.isNotEmpty
+          ? _partialStartCtl.text
+          : null,
+      partialEnd:   _status == 'partial' && _partialEndCtl.text.isNotEmpty
+          ? _partialEndCtl.text
+          : null,
+    );
     setState(() => _saving = false);
     if (!mounted) return;
     if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(err), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(err), backgroundColor: Colors.red));
     } else {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('保存しました')));
+          .showSnackBar(SnackBar(content: Text(context.read<LanguageProvider>().t('att.saved'))));
       Navigator.pop(context);
     }
   }
@@ -66,6 +66,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final ev = widget.event;
+    final lang = context.watch<LanguageProvider>();
     return Scaffold(
       appBar: AppBar(title: Text(ev.title)),
       body: ListView(
@@ -105,14 +106,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           const SizedBox(height: 16),
 
           // attendance form
-          Text('出欠登録',
+          Text(lang.t('att.register'),
               style: Theme.of(context)
                   .textTheme
                   .titleSmall
                   ?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           StatusSelector(
-              selected: _status, onChanged: (s) => setState(() => _status = s)),
+              selected: _status,
+              onChanged: (s) => setState(() => _status = s)),
           const SizedBox(height: 12),
 
           if (_status == 'partial') ...[
@@ -120,10 +122,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               Expanded(
                 child: TextFormField(
                   controller: _partialStartCtl,
-                  decoration: const InputDecoration(
-                    labelText: '開始時刻',
-                    hintText: '例: 15:00',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: lang.t('event.start_time'),
+                    hintText: '15:00',
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                 ),
@@ -132,10 +134,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               Expanded(
                 child: TextFormField(
                   controller: _partialEndCtl,
-                  decoration: const InputDecoration(
-                    labelText: '終了時刻',
-                    hintText: '例: 17:00',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: lang.t('event.end_time'),
+                    hintText: '17:00',
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                 ),
@@ -146,9 +148,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
           TextFormField(
             controller: _commentCtl,
-            decoration: const InputDecoration(
-              labelText: 'コメント (任意)',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: lang.t('att.comment'),
+              border: const OutlineInputBorder(),
               isDense: true,
             ),
             maxLines: 2,
@@ -161,11 +163,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               onPressed: _saving ? null : _save,
               child: _saving
                   ? const SizedBox(
-                      width: 20,
-                      height: 20,
+                      width: 20, height: 20,
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
-                  : const Text('保存'),
+                  : Text(lang.t('common.save')),
             ),
           ),
           const SizedBox(height: 24),
@@ -173,23 +174,22 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           // 出席予定者リスト
           if (ev.attendees.isNotEmpty) ...[
             Row(children: [
-              Text('参加状況',
+              Text(lang.t('att.summary'),
                   style: Theme.of(context)
                       .textTheme
                       .titleSmall
                       ?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(width: 8),
-              _SummaryBadge(
-                  '出席', ev.summary.present, context.appColors.presentFg),
+              _SummaryBadge(lang.t('status.present'), ev.summary.present,
+                  context.appColors.presentFg),
               const SizedBox(width: 4),
-              _SummaryBadge(
-                  '部分', ev.summary.partial, context.appColors.partialFg),
+              _SummaryBadge(lang.t('status.partial_short'), ev.summary.partial,
+                  context.appColors.partialFg),
               const SizedBox(width: 4),
-              _SummaryBadge(
-                  '欠席', ev.summary.absent, context.appColors.absentFg),
-              const SizedBox(width: 4),
-              _SummaryBadge(
-                  '未回答', ev.summary.unanswered, context.appColors.unansweredFg),
+              _SummaryBadge(lang.t('status.absent'), ev.summary.absent,
+                  context.appColors.absentFg),
+              _SummaryBadge(lang.t('status.unanswered'), ev.summary.unanswered,
+                  context.appColors.unansweredFg),
             ]),
             const SizedBox(height: 8),
             Card(
@@ -200,6 +200,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     ...ev.attendees.where((a) => a.status == 'present'),
                     ...ev.attendees.where((a) => a.status == 'partial'),
                     ...ev.attendees.where((a) => a.status == 'absent'),
+                    // 未回答も一覧に出す。出さないと「まだ出していない人」が
+                    // 画面上どこにも現れず、督促できない。
+                    ...ev.attendees.where((a) =>
+                        a.status != 'present' &&
+                        a.status != 'partial' &&
+                        a.status != 'absent'),
                   ])
                     ListTile(
                       dense: true,
@@ -212,20 +218,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           _ => context.appColors.unansweredFg,
                         },
                         child: Icon(
-                          switch (a.status) {
-                            'present' => Icons.check_circle,
-                            'partial' => Icons.contrast,
-                            'absent' => Icons.remove_circle,
-                            _ => Icons.close,
-                          },
+                          // ✗ は「失敗」の含意が強い。欠席は正当な回答なので使わない。
+                          statusIcon(a.status),
                           color: Colors.white,
                           size: 14,
                         ),
                       ),
                       title: Text(a.name, style: const TextStyle(fontSize: 14)),
                       subtitle: a.comment != null && a.comment!.isNotEmpty
-                          ? Text(a.comment!,
-                              style: const TextStyle(fontSize: 14))
+                          ? Text(a.comment!, style: const TextStyle(fontSize: 14))
                           : null,
                     ),
                 ],
